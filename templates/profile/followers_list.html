@@ -1,0 +1,576 @@
+{% extends "index/base.html" %}
+{% load static %}
+
+{% block title %}{{ profile_user.first_name|default:profile_user.username }} · Followers{% endblock %}
+
+{% block extra_styles %}
+
+/* ═══════════════════════════════════════════════════
+   FOLLOWERS LIST PAGE
+═══════════════════════════════════════════════════ */
+
+/* ── Top bar ── */
+.top-bar-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px; height: 34px;
+    border-radius: 9999px;
+    border: none;
+    background: transparent;
+    color: var(--text-1);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background var(--tr);
+    text-decoration: none;
+}
+.top-bar-back:hover { background: var(--bg-card-hover); }
+.top-bar-back svg {
+    width: 18px; height: 18px;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.top-bar-meta { display: flex; flex-direction: column; gap: 1px; }
+.top-bar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 800;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+}
+.top-bar-sub {
+    font-size: 12px; color: var(--text-3); font-weight: 500;
+}
+
+/* ── Sub-nav tabs ── */
+.follow-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+}
+.follow-tab {
+    height: 50px;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    font-size: 14px; font-weight: 600;
+    color: var(--text-3);
+    text-decoration: none;
+    position: relative;
+    transition: color var(--tr), background var(--tr);
+}
+.follow-tab:hover { color: var(--text-2); background: rgba(255,255,255,.015); }
+.follow-tab.active { color: var(--text-1); font-weight: 700; }
+.follow-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 3px;
+    border-radius: 2px 2px 0 0;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(29,155,240,0.55);
+}
+.follow-tab-count {
+    font-size: 11px; font-weight: 800;
+    padding: 1px 8px;
+    border-radius: 9999px;
+    background: var(--bg-input);
+    color: var(--text-3);
+    transition: background var(--tr), color var(--tr);
+}
+.follow-tab.active .follow-tab-count {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* ── User rows ── */
+.user-list { padding: 0; }
+
+.user-row {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    transition: background var(--tr);
+    animation: rowFadeIn .22s cubic-bezier(.4,0,.2,1) both;
+}
+.user-row:hover { background: var(--bg-card-hover); }
+
+.user-row:nth-child(1) { animation-delay: 0ms; }
+.user-row:nth-child(2) { animation-delay: 30ms; }
+.user-row:nth-child(3) { animation-delay: 60ms; }
+.user-row:nth-child(4) { animation-delay: 90ms; }
+.user-row:nth-child(5) { animation-delay: 120ms; }
+.user-row:nth-child(6) { animation-delay: 150ms; }
+.user-row:nth-child(7) { animation-delay: 180ms; }
+.user-row:nth-child(8) { animation-delay: 210ms; }
+.user-row:nth-child(n+9) { animation-delay: 240ms; }
+
+@keyframes rowFadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Avatar ── */
+.user-ava {
+    width: 46px; height: 46px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    background: var(--bg-input);
+    border: 2px solid var(--border);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 17px; color: var(--accent);
+    text-decoration: none;
+    transition: border-color var(--tr), transform var(--tr);
+}
+.user-ava:hover { border-color: var(--accent); transform: scale(1.05); }
+.user-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+/* cycle accent ring colours */
+.user-row:nth-child(3n+1) .user-ava { color: var(--accent); }
+.user-row:nth-child(3n+2) .user-ava { color: var(--purple); border-color: rgba(139,92,246,0.2); }
+.user-row:nth-child(3n+2) .user-ava:hover { border-color: var(--purple); }
+.user-row:nth-child(3n)   .user-ava { color: var(--green);  border-color: rgba(16,217,122,0.2); }
+.user-row:nth-child(3n)   .user-ava:hover { border-color: var(--green); }
+
+/* ── Info block ── */
+.user-info {
+    flex: 1;
+    overflow: hidden;
+    cursor: pointer;
+}
+.user-name {
+    font-size: 14px; font-weight: 700; color: var(--text-1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 1px;
+}
+.user-handle {
+    font-size: 12.5px; color: var(--text-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 5px;
+}
+.user-bio {
+    font-size: 13px; color: var(--text-2);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ── Follows-you badge ── */
+.follows-you-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    background: var(--bg-input);
+    color: var(--text-3);
+    border: 1px solid var(--border);
+    letter-spacing: 0.2px;
+    margin-left: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ── Follow / Unfollow button ── */
+.btn-follow-action {
+    flex-shrink: 0;
+    height: 34px;
+    padding: 0 18px;
+    border-radius: 9999px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--tr);
+    letter-spacing: 0.1px;
+}
+.btn-follow-action.not-following {
+    background: transparent;
+    border: 1.5px solid var(--border-strong);
+    color: var(--text-1);
+}
+.btn-follow-action.not-following:hover {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 4px 14px rgba(29,155,240,0.28);
+}
+.btn-follow-action.is-following {
+    background: var(--accent);
+    border: 1.5px solid var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(29,155,240,0.22);
+}
+.btn-follow-action.is-following:hover {
+    background: var(--red);
+    border-color: var(--red);
+    box-shadow: 0 4px 14px rgba(244,33,46,0.28);
+}
+.btn-follow-action.is-following::after      { content: 'Following'; }
+.btn-follow-action.is-following:hover::after { content: 'Unfollow'; }
+.btn-follow-action.is-following span { display: none; }
+
+.btn-follow-action.loading {
+    opacity: .65;
+    cursor: wait;
+    pointer-events: none;
+}
+
+/* ── Remove follower button (only on own profile) ── */
+.btn-remove {
+    flex-shrink: 0;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 9999px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    background: transparent;
+    border: 1.5px solid var(--border-strong);
+    color: var(--text-3);
+    transition: all var(--tr);
+    margin-left: 6px;
+}
+.btn-remove:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-dim);
+}
+.btn-remove.loading {
+    opacity: .5;
+    cursor: wait;
+    pointer-events: none;
+}
+
+/* ── Button group ── */
+.btn-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 72px 32px 40px;
+    gap: 14px;
+}
+.empty-icon {
+    width: 64px; height: 64px;
+    border-radius: 9999px;
+    background: var(--accent-dim);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 4px;
+}
+.empty-icon svg {
+    width: 28px; height: 28px;
+    fill: none; stroke: var(--accent);
+    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.empty-state h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 800;
+    color: var(--text-1);
+    letter-spacing: -0.4px;
+}
+.empty-state p {
+    font-size: 14px; color: var(--text-3);
+    line-height: 1.65; max-width: 300px;
+}
+.empty-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 4px;
+    height: 40px;
+    padding: 0 22px;
+    border-radius: 9999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px; font-weight: 700;
+    text-decoration: none;
+    transition: background var(--tr), transform var(--tr), box-shadow var(--tr);
+    box-shadow: 0 4px 18px rgba(29,155,240,0.28);
+}
+.empty-cta:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(29,155,240,0.38);
+}
+
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ══════════════════════ TOP BAR ══════════════════════ -->
+<div class="top-bar">
+    <div class="top-bar-row">
+        <a href="{% url 'profile_detail' profile_user.username %}" class="top-bar-back" title="Back">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <div class="top-bar-meta">
+            <span class="top-bar-title">{{ profile_user.first_name|default:profile_user.username }}</span>
+            <span class="top-bar-sub">@{{ profile_user.username }}</span>
+        </div>
+    </div>
+
+    <!-- Followers / Following tabs -->
+    <div class="follow-tabs">
+        <a href="{% url 'followers_list' profile_user.username %}"
+           class="follow-tab active">
+            Followers
+            <span class="follow-tab-count">{{ followers.count }}</span>
+        </a>
+        <a href="{% url 'following_list' profile_user.username %}"
+           class="follow-tab">
+            Following
+            <span class="follow-tab-count">{{ profile_user.following.count }}</span>
+        </a>
+    </div>
+</div>
+
+
+<!-- ══════════════════════ LIST ══════════════════════ -->
+<div class="user-list">
+
+    {% if followers %}
+        {% for follow_obj in followers %}
+        {% with person=follow_obj.follower %}
+        <div class="user-row" id="user-row-{{ person.id }}">
+
+            <!-- Avatar -->
+            <a href="{% url 'profile_detail' person.username %}" class="user-ava">
+                {% if person.profile_picture %}
+                    <img src="{{ person.profile_picture.url }}" alt="{{ person.username }}">
+                {% else %}
+                    {{ person.first_name|first|upper|default:person.username|first|upper }}
+                {% endif %}
+            </a>
+
+            <!-- Info -->
+            <div class="user-info" onclick="window.location='{% url 'profile_detail' person.username %}'">
+                <div class="user-name">
+                    {{ person.first_name|default:person.username }}
+                    {% comment %}
+                        Show "Follows you" badge if viewing your own profile
+                        (every person in this list already follows profile_user,
+                         so we check if profile_user follows them back)
+                    {% endcomment %}
+                    {% if profile_user == request.user %}
+                        {% with follows_back=person.following.all %}
+                            {% for f in follows_back %}
+                                {% if f.following == request.user %}
+                                    <span class="follows-you-badge">Follows you</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    {% endif %}
+                </div>
+                <div class="user-handle">@{{ person.username }}</div>
+                {% if person.bio %}
+                <div class="user-bio">{{ person.bio|truncatechars:120 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Buttons — hide for own account -->
+            {% if person != request.user %}
+            <div class="btn-group">
+                <!-- Follow / Unfollow -->
+                <button
+                    class="btn-follow-action"
+                    data-username="{{ person.username }}"
+                    data-url="{% url 'toggle_follow' person.username %}"
+                    data-following="false"
+                    onclick="handleFollow(this)">
+                </button>
+
+                <!-- Remove follower — only on own profile -->
+                {% if profile_user == request.user %}
+                <button
+                    class="btn-remove"
+                    data-username="{{ person.username }}"
+                    data-url="{% url 'toggle_follow' person.username %}"
+                    data-row-id="user-row-{{ person.id }}"
+                    title="Remove this follower"
+                    onclick="handleRemove(this)">
+                    Remove
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </div>
+        {% endwith %}
+        {% endfor %}
+
+    {% else %}
+
+        <!-- Empty state -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            {% if profile_user == request.user %}
+                <h3>You have no followers yet</h3>
+                <p>When someone follows you they'll appear here. Start sharing posts to grow your audience.</p>
+                <a href="{% url 'search' %}?tab=people" class="empty-cta">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Discover people
+                </a>
+            {% else %}
+                <h3>{{ profile_user.first_name|default:profile_user.username }} has no followers yet</h3>
+                <p>Be the first — follow them and their posts will appear in your feed.</p>
+            {% endif %}
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const CSRF = '{{ csrf_token }}';
+
+    const SD = {
+        background: '#0a0f1a', color: '#eef0f3',
+        confirmButtonColor: '#1d9bf0', confirmButtonText: 'OK',
+        customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+    };
+
+    /* ══════════════════════════════════════════
+       INIT — resolve follow state for each button
+       via the viewer's following list passed from
+       the view (we embed it as JSON below).
+    ══════════════════════════════════════════ */
+    const viewerFollowingIds = new Set(
+        JSON.parse(document.getElementById('viewer-following-ids').textContent || '[]')
+    );
+
+    document.querySelectorAll('.btn-follow-action').forEach(btn => {
+        const username = btn.dataset.username;
+        /* look up by user id embedded in the row */
+        const row = btn.closest('.user-row');
+        const userId = row ? parseInt(row.id.replace('user-row-', ''), 10) : null;
+        const isFollowing = userId !== null && viewerFollowingIds.has(userId);
+        btn.dataset.following = isFollowing ? 'true' : 'false';
+        setFollowState(btn, isFollowing);
+    });
+
+    /* ══════════════════════════════════════════
+       FOLLOW TOGGLE
+    ══════════════════════════════════════════ */
+    function handleFollow(btn) {
+        if (btn.classList.contains('loading')) return;
+        btn.classList.add('loading');
+
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.classList.remove('loading');
+            if (!data.success) {
+                Swal.fire({ ...SD, icon: 'error', title: data.message || 'Something went wrong.' });
+                return;
+            }
+            btn.dataset.following = data.is_following ? 'true' : 'false';
+            setFollowState(btn, data.is_following);
+        })
+        .catch(() => {
+            btn.classList.remove('loading');
+            Swal.fire({ ...SD, icon: 'error', title: 'Network error. Please try again.' });
+        });
+    }
+
+    function setFollowState(btn, isFollowing) {
+        btn.classList.toggle('is-following',  isFollowing);
+        btn.classList.toggle('not-following', !isFollowing);
+        if (!isFollowing) btn.textContent = 'Follow';
+        /* "Following / Unfollow" label is handled by CSS ::after on .is-following */
+    }
+
+    /* ══════════════════════════════════════════
+       REMOVE FOLLOWER
+       We call toggle_follow on that user so they
+       un-follow the profile owner. If it succeeds
+       the row fades out and is removed from the DOM.
+    ══════════════════════════════════════════ */
+    function handleRemove(btn) {
+        if (btn.classList.contains('loading')) return;
+
+        Swal.fire({
+            ...SD,
+            icon: 'warning',
+            title: 'Remove follower?',
+            html: `<span style="color:#7a8a9a;font-size:13px">@${btn.dataset.username} will no longer follow you.</span>`,
+            showCancelButton: true,
+            confirmButtonText: 'Remove',
+            confirmButtonColor: '#f4212e',
+            cancelButtonText: 'Cancel',
+            cancelButtonColor: 'rgba(255,255,255,0.06)',
+            reverseButtons: true,
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            btn.classList.add('loading');
+
+            fetch(btn.dataset.url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.classList.remove('loading');
+                if (!data.success) {
+                    Swal.fire({ ...SD, icon: 'error', title: data.message || 'Something went wrong.' });
+                    return;
+                }
+                /* Animate row out */
+                const row = document.getElementById(btn.dataset.rowId);
+                if (row) {
+                    row.style.transition = 'opacity .3s, transform .3s, max-height .35s';
+                    row.style.overflow   = 'hidden';
+                    row.style.maxHeight  = row.offsetHeight + 'px';
+                    requestAnimationFrame(() => {
+                        row.style.opacity   = '0';
+                        row.style.transform = 'translateX(20px)';
+                        row.style.maxHeight = '0';
+                        row.style.padding   = '0 18px';
+                    });
+                    setTimeout(() => row.remove(), 360);
+                }
+            })
+            .catch(() => {
+                btn.classList.remove('loading');
+                Swal.fire({ ...SD, icon: 'error', title: 'Network error. Please try again.' });
+            });
+        });
+    }
+
+    window.handleFollow = handleFollow;
+    window.handleRemove = handleRemove;
+
+})();
+</script>
+
+{# Embed viewer's following IDs so JS can resolve button states without extra requests #}
+<script id="viewer-following-ids" type="application/json">
+[{% for follow_obj in request.user.following.all %}{{ follow_obj.following_id }}{% if not forloop.last %},{% endif %}{% endfor %}]
+</script>
+
+{% endblock %}

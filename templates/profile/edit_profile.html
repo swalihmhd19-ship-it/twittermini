@@ -1,0 +1,626 @@
+{% extends 'index/base.html' %}
+{% load static %}
+
+{% block title %}Edit profile · Twitter Mini{% endblock %}
+
+{% block extra_styles %}
+
+/* ─── Top bar ─── */
+.edit-topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(4,6,10,0.88);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px; padding: 0 16px;
+}
+.edit-topbar-left { display: flex; align-items: center; gap: 14px; }
+.back-btn {
+    width: 34px; height: 34px; border-radius: 9999px;
+    border: none; background: transparent; color: var(--text-1);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background var(--tr);
+}
+.back-btn:hover { background: rgba(255,255,255,.07); }
+.back-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.edit-topbar-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; letter-spacing: -.3px; }
+
+.btn-save {
+    height: 32px; padding: 0 18px; border-radius: 9999px; border: none;
+    background: var(--text-1); color: #04060a;
+    font-size: 14px; font-weight: 800; letter-spacing: .1px;
+    opacity: .45; cursor: not-allowed;
+    transition: opacity var(--tr), background var(--tr), transform var(--tr), box-shadow var(--tr);
+}
+.btn-save.ready {
+    opacity: 1; cursor: pointer;
+    box-shadow: 0 3px 14px rgba(238,240,243,.1);
+}
+.btn-save.ready:hover { background: #d4d8dc; transform: translateY(-1px); }
+.btn-save.ready:active { transform: scale(.97); }
+
+/* ─── Banner ─── */
+.edit-banner-wrap {
+    position: relative; width: 100%; height: 190px; cursor: pointer;
+    background: linear-gradient(135deg, #071828 0%, #060e1c 55%, #040810 100%);
+    overflow: hidden;
+}
+.edit-banner-wrap::after {
+    content: ''; position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse at 25% 65%, rgba(29,155,240,.2) 0%, transparent 65%),
+        radial-gradient(ellipse at 80% 25%, rgba(139,92,246,.12) 0%, transparent 60%);
+    pointer-events: none;
+}
+.edit-banner-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.edit-banner-overlay {
+    position: absolute; inset: 0; z-index: 2;
+    background: rgba(0,0,0,.4);
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    opacity: 0; transition: opacity var(--tr);
+}
+.edit-banner-wrap:hover .edit-banner-overlay { opacity: 1; }
+.overlay-icon-btn {
+    width: 42px; height: 42px; border-radius: 9999px;
+    background: rgba(0,0,0,.55); border: none; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--tr), transform var(--tr);
+}
+.overlay-icon-btn:hover { background: rgba(0,0,0,.75); transform: scale(1.08); }
+.overlay-icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* ─── Avatar section ─── */
+.edit-identity { padding: 0 18px; }
+.edit-avatar-row { display: flex; align-items: flex-end; margin-bottom: 24px; }
+.edit-avatar-wrap {
+    margin-top: -46px; position: relative;
+    width: 92px; flex-shrink: 0;
+}
+.edit-avatar {
+    width: 92px; height: 92px; border-radius: 9999px;
+    border: 3px solid var(--bg); background: var(--bg-input); overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 32px; color: var(--accent);
+    box-shadow: 0 0 0 1px var(--border-strong);
+    cursor: pointer; position: relative;
+}
+.edit-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-edit-ring {
+    position: absolute; inset: 0; border-radius: 9999px;
+    background: rgba(0,0,0,.5);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity var(--tr);
+}
+.edit-avatar:hover .avatar-edit-ring { opacity: 1; }
+.avatar-edit-ring svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+
+/* ─── Form fields ─── */
+.edit-form { padding: 0 18px 40px; }
+
+.field-group { margin-bottom: 22px; }
+
+.field-label {
+    display: block;
+    font-size: 12px; font-weight: 700;
+    color: var(--text-3);
+    text-transform: uppercase; letter-spacing: .8px;
+    margin-bottom: 8px;
+}
+
+/* floating-border input */
+.field-input-wrap { position: relative; }
+
+.field-input,
+.field-textarea {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 12px;
+    color: var(--text-1);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px; font-weight: 500;
+    outline: none;
+    transition: border-color var(--tr), background var(--tr), box-shadow var(--tr);
+    caret-color: var(--accent);
+}
+
+.field-input {
+    height: 52px;
+    padding: 0 14px;
+    display: flex; align-items: center;
+}
+
+.field-textarea {
+    padding: 14px;
+    resize: none;
+    min-height: 90px;
+    line-height: 1.55;
+}
+
+.field-input:focus,
+.field-textarea:focus {
+    border-color: var(--accent);
+    background: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(29,155,240,.08);
+}
+
+.field-input.has-error,
+.field-textarea.has-error {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(244,33,46,.08);
+}
+
+.field-input::placeholder,
+.field-textarea::placeholder { color: var(--text-3); }
+
+/* char counter */
+.field-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 6px; padding: 0 2px;
+}
+.char-count { font-size: 12px; color: var(--text-3); transition: color var(--tr); }
+.char-count.warn { color: var(--red); }
+.field-hint { font-size: 12px; color: var(--text-3); }
+
+/* inline error */
+.field-error {
+    font-size: 12px; color: var(--red);
+    margin-top: 5px; padding-left: 2px;
+    display: none;
+}
+.field-error.show { display: block; }
+
+/* input icon suffix */
+.field-icon {
+    position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--text-3); pointer-events: none;
+    transition: color var(--tr);
+}
+.field-input-wrap:focus-within .field-icon { color: var(--accent); }
+.field-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* ─── Section divider ─── */
+.section-divider {
+    height: 1px; background: var(--border);
+    margin: 28px 0;
+}
+.section-label {
+    font-size: 11px; font-weight: 800; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 18px;
+}
+
+/* ─── Toggle switch ─── */
+.toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background var(--tr), border-color var(--tr);
+}
+.toggle-row:hover { background: var(--bg-card); border-color: var(--border-strong); }
+
+.toggle-info {}
+.toggle-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 2px; }
+.toggle-desc  { font-size: 13px; color: var(--text-3); line-height: 1.4; }
+
+.toggle-switch {
+    position: relative; width: 44px; height: 24px; flex-shrink: 0;
+}
+.toggle-switch input {
+    opacity: 0; width: 0; height: 0; position: absolute;
+}
+.toggle-track {
+    position: absolute; inset: 0; border-radius: 12px;
+    background: var(--border-strong);
+    transition: background var(--tr);
+}
+.toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 9999px;
+    background: var(--text-3);
+    transition: transform var(--tr), background var(--tr);
+    box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+.toggle-switch input:checked ~ .toggle-track { background: var(--accent); }
+.toggle-switch input:checked ~ .toggle-thumb { transform: translateX(20px); background: #fff; }
+
+/* ─── Avatar error ─── */
+.avatar-error { font-size: 12px; color: var(--red); margin-top: 6px; display: none; }
+.avatar-error.show { display: block; }
+
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Top bar -->
+<div class="edit-topbar">
+    <div class="edit-topbar-left">
+        <button class="back-btn" onclick="history.back()">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <span class="edit-topbar-title">Edit profile</span>
+    </div>
+    <button class="btn-save" id="saveBtn" type="button" disabled>Save</button>
+</div>
+
+<form method="POST" enctype="multipart/form-data" id="editForm" novalidate>
+{% csrf_token %}
+
+<!-- Banner -->
+<div class="edit-banner-wrap" id="bannerWrap">
+    {% if user.banner_picture %}
+        <img id="bannerPreview" class="edit-banner-img" src="{{ user.banner_picture.url }}" alt="Banner">
+    {% else %}
+        <img id="bannerPreview" class="edit-banner-img" style="display:none" alt="Banner">
+    {% endif %}
+    <div class="edit-banner-overlay">
+        <label for="bannerInput" class="overlay-icon-btn" title="Upload photo">
+            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </label>
+        {% if user.banner_picture %}
+        <button type="button" class="overlay-icon-btn" id="removeBannerBtn" title="Remove photo">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        {% endif %}
+    </div>
+    <input type="file" id="bannerInput" name="banner" accept="image/*" hidden>
+</div>
+
+<!-- Avatar + identity area -->
+<div class="edit-identity">
+    <div class="edit-avatar-row">
+
+        <div class="edit-avatar-wrap">
+            <label for="avatarInput">
+                <div class="edit-avatar" title="Change photo">
+                    {% if user.profile_picture %}
+                        <img id="avatarPreview" src="{{ user.profile_picture.url }}" alt="Avatar">
+                    {% else %}
+                        <span id="avatarInitial">{{ user.first_name|first|upper|default:user.username|first|upper }}</span>
+                        <img id="avatarPreview" style="display:none" alt="Avatar">
+                    {% endif %}
+                    <div class="avatar-edit-ring">
+                        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>
+                </div>
+            </label>
+            <input type="file" id="avatarInput" name="avatar" accept="image/*" hidden>
+        </div>
+
+    </div>
+    <p class="avatar-error" id="avatarError"></p>
+</div>
+
+<!-- Fields -->
+<div class="edit-form">
+
+    <!-- Display name -->
+    <div class="field-group">
+        <label class="field-label" for="displayName">Display name</label>
+        <div class="field-input-wrap">
+            <input type="text"
+                   class="field-input"
+                   id="displayName"
+                   name="display_name"
+                   placeholder="Your name"
+                   maxlength="50"
+                   value="{{ user.first_name|default:'' }}"
+                   autocomplete="off">
+            <span class="field-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+        </div>
+        <div class="field-footer">
+            <span class="field-error" id="nameError">Display name is required.</span>
+            <span class="char-count" id="nameCount">50</span>
+        </div>
+    </div>
+
+    <!-- Username -->
+    <div class="field-group">
+        <label class="field-label" for="usernameField">Username</label>
+        <div class="field-input-wrap">
+            <input type="text"
+                   class="field-input"
+                   id="usernameField"
+                   name="username"
+                   placeholder="username"
+                   maxlength="15"
+                   value="{{ user.username }}"
+                   autocomplete="off">
+            <span class="field-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+        </div>
+        <div class="field-footer">
+            <span class="field-error" id="usernameError"></span>
+            <span class="char-count" id="usernameCount">15</span>
+        </div>
+        <div class="field-hint" id="usernameHint" style="font-size:12px;color:var(--text-3);margin-top:5px;">
+            twitter-mini.app/@{{ user.username }}
+        </div>
+    </div>
+
+    <!-- Bio -->
+    <div class="field-group">
+        <label class="field-label" for="bioField">Bio</label>
+        <div class="field-input-wrap">
+            <textarea class="field-textarea"
+                      id="bioField"
+                      name="bio"
+                      placeholder="Tell the world a little about yourself"
+                      maxlength="160"
+                      rows="3">{{ user.bio|default:'' }}</textarea>
+        </div>
+        <div class="field-footer">
+            <span></span>
+            <span class="char-count" id="bioCount">160</span>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Privacy toggle -->
+    <p class="section-label">Privacy</p>
+
+    <label class="toggle-row" for="isPrivate">
+        <div class="toggle-info">
+            <p class="toggle-title">Private account</p>
+            <p class="toggle-desc">Only followers you approve can see your posts and profile.</p>
+        </div>
+        <div class="toggle-switch">
+            <input type="checkbox"
+                   id="isPrivate"
+                   name="is_private"
+                   {% if user.is_private %}checked{% endif %}>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+        </div>
+    </label>
+
+</div><!-- /edit-form -->
+</form>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+(function(){
+    const SD = {
+        background:'#0a0f1a', color:'#eef0f3',
+        confirmButtonColor:'#1d9bf0',
+        customClass:{ popup:'swal2-popup', confirmButton:'swal2-confirm' }
+    };
+
+    /* ────────────────────────────────────────────
+       Track original values to detect changes
+    ──────────────────────────────────────────── */
+    const nameInput  = document.getElementById('displayName');
+    const unameInput = document.getElementById('usernameField');
+    const bioInput   = document.getElementById('bioField');
+    const saveBtn    = document.getElementById('saveBtn');
+
+    const original = {
+        name:     nameInput.value,
+        username: unameInput.value,
+        bio:      bioInput.value,
+        private:  document.getElementById('isPrivate').checked,
+        avatar:   false,
+        banner:   false,
+    };
+
+    function isDirty(){
+        return nameInput.value  !== original.name     ||
+               unameInput.value !== original.username  ||
+               bioInput.value   !== original.bio       ||
+               document.getElementById('isPrivate').checked !== original.private ||
+               original.avatar || original.banner;
+    }
+
+    function isValid(){
+        const n  = nameInput.value.trim();
+        const u  = unameInput.value.trim();
+        const uRe = /^[A-Za-z0-9_]+$/;
+        if(!n)           return false;
+        if(u.length < 3) return false;
+        if(!uRe.test(u)) return false;
+        return true;
+    }
+
+    function refreshSave(){
+        const ok = isDirty() && isValid();
+        saveBtn.disabled = !ok;
+        saveBtn.classList.toggle('ready', ok);
+    }
+
+    /* ────────────────────────────────────────────
+       Char counters
+    ──────────────────────────────────────────── */
+    function counter(input, el, max){
+        function upd(){
+            const r = max - input.value.length;
+            el.textContent = r;
+            el.classList.toggle('warn', r <= Math.ceil(max * .08));
+        }
+        input.addEventListener('input', upd);
+        upd();
+    }
+    counter(nameInput,  document.getElementById('nameCount'),     50);
+    counter(unameInput, document.getElementById('usernameCount'), 15);
+    counter(bioInput,   document.getElementById('bioCount'),      160);
+
+    /* ────────────────────────────────────────────
+       Username: sanitise + live hint + validate
+    ──────────────────────────────────────────── */
+    const usernameError = document.getElementById('usernameError');
+    const usernameHint  = document.getElementById('usernameHint');
+
+    unameInput.addEventListener('input', () => {
+        unameInput.value = unameInput.value.replace(/[^A-Za-z0-9_]/g, '');
+        const val = unameInput.value.trim();
+
+        usernameError.classList.remove('show');
+        unameInput.classList.remove('has-error');
+
+        if(val.length > 0 && val.length < 3){
+            usernameError.textContent = 'Must be at least 3 characters.';
+            usernameError.classList.add('show');
+            unameInput.classList.add('has-error');
+        } else if(val.length > 0 && !/^[A-Za-z0-9_]+$/.test(val)){
+            usernameError.textContent = 'Only letters, numbers and underscores.';
+            usernameError.classList.add('show');
+            unameInput.classList.add('has-error');
+        }
+
+        usernameHint.textContent = val ? `twitter-mini.app/@${val}` : '';
+        refreshSave();
+    });
+
+    /* ────────────────────────────────────────────
+       Display name validation
+    ──────────────────────────────────────────── */
+    const nameError = document.getElementById('nameError');
+    nameInput.addEventListener('input', () => {
+        const ok = nameInput.value.trim().length > 0;
+        nameError.classList.toggle('show', !ok && nameInput.value.length === 0);
+        nameInput.classList.toggle('has-error', !ok && nameInput.value.length === 0);
+        refreshSave();
+    });
+
+    bioInput.addEventListener('input', refreshSave);
+    document.getElementById('isPrivate').addEventListener('change', refreshSave);
+
+    /* ────────────────────────────────────────────
+       Avatar preview
+    ──────────────────────────────────────────── */
+    const avatarInput   = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarInitial = document.getElementById('avatarInitial');
+    const avatarError   = document.getElementById('avatarError');
+
+    avatarInput.addEventListener('change', () => {
+        const file = avatarInput.files[0];
+        avatarError.classList.remove('show');
+        if(!file) return;
+
+        if(!file.type.startsWith('image/')){
+            avatarError.textContent = 'Please select a valid image.';
+            avatarError.classList.add('show');
+            avatarInput.value = '';
+            return;
+        }
+        if(file.size > 5 * 1024 * 1024){
+            avatarError.textContent = 'Image must be under 5 MB.';
+            avatarError.classList.add('show');
+            avatarInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            avatarPreview.src = e.target.result;
+            avatarPreview.style.display = 'block';
+            if(avatarInitial) avatarInitial.style.display = 'none';
+            original.avatar = true;
+            refreshSave();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    /* ────────────────────────────────────────────
+       Banner preview
+    ──────────────────────────────────────────── */
+    const bannerInput   = document.getElementById('bannerInput');
+    const bannerPreview = document.getElementById('bannerPreview');
+    const removeBanner  = document.getElementById('removeBannerBtn');
+
+    bannerInput.addEventListener('change', () => {
+        const file = bannerInput.files[0];
+        if(!file) return;
+        if(!file.type.startsWith('image/') || file.size > 8*1024*1024){
+            Swal.fire({...SD, icon:'warning', title:'Invalid image', text:'Use an image under 8 MB.'});
+            bannerInput.value=''; return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => {
+            bannerPreview.src = e.target.result;
+            bannerPreview.style.display = 'block';
+            original.banner = true;
+            refreshSave();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    if(removeBanner){
+        removeBanner.addEventListener('click', e => {
+            e.preventDefault();
+            bannerPreview.src = '';
+            bannerPreview.style.display = 'none';
+            bannerInput.value = '';
+            original.banner = true;
+            refreshSave();
+        });
+    }
+
+    /* ────────────────────────────────────────────
+       Save button → submit form
+    ──────────────────────────────────────────── */
+    saveBtn.addEventListener('click', () => {
+        if(!saveBtn.classList.contains('ready')) return;
+
+        /* Final validation before submit */
+        const n  = nameInput.value.trim();
+        const u  = unameInput.value.trim();
+
+        if(!n){
+            nameError.classList.add('show');
+            nameInput.classList.add('has-error');
+            nameInput.focus();
+            return;
+        }
+        if(u.length < 3){
+            usernameError.textContent = 'Must be at least 3 characters.';
+            usernameError.classList.add('show');
+            unameInput.classList.add('has-error');
+            unameInput.focus();
+            return;
+        }
+        if(!/^[A-Za-z0-9_]+$/.test(u)){
+            usernameError.textContent = 'Only letters, numbers and underscores.';
+            usernameError.classList.add('show');
+            unameInput.classList.add('has-error');
+            unameInput.focus();
+            return;
+        }
+
+        /* Loading state */
+        saveBtn.textContent = 'Saving…';
+        saveBtn.classList.remove('ready');
+        saveBtn.disabled = true;
+
+        document.getElementById('editForm').submit();
+    });
+
+    /* ────────────────────────────────────────────
+       Unsaved changes warning on navigation
+    ──────────────────────────────────────────── */
+    window.addEventListener('beforeunload', e => {
+        if(isDirty() && saveBtn.classList.contains('ready')){
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    /* Initial state */
+    refreshSave();
+
+})();
+</script>
+{% endblock %}

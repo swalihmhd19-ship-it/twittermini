@@ -1,0 +1,1072 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Twitter Mini{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* ═══════════════════════════════════════════════════
+           DESIGN TOKENS
+        ═══════════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:              #04060a;
+            --bg-panel:        #080c12;
+            --bg-card:         #0c1018;
+            --bg-card-hover:   #101520;
+            --bg-input:        #0e1420;
+            --accent:          #1d9bf0;
+            --accent-glow:     rgba(29,155,240,0.18);
+            --accent-hover:    #1a8cd8;
+            --accent-dim:      rgba(29,155,240,0.10);
+            --purple:          #8b5cf6;
+            --purple-dim:      rgba(139,92,246,0.10);
+            --green:           #10d97a;
+            --green-dim:       rgba(16,217,122,0.10);
+            --red:             #f4212e;
+            --red-dim:         rgba(244,33,46,0.10);
+            --text-1:          #eef0f3;
+            --text-2:          #7a8a9a;
+            --text-3:          #3d4f62;
+            --border:          rgba(255,255,255,0.06);
+            --border-strong:   rgba(255,255,255,0.10);
+            --nav-w:           256px;
+            --right-w:         338px;
+            --tr:              .18s cubic-bezier(.4,0,.2,1);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            min-height: 100vh;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        button { font-family: inherit; cursor: pointer; }
+        img { display: block; max-width: 100%; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+        /* ═══════════════════════════════════════════════════
+           APP SHELL
+        ═══════════════════════════════════════════════════ */
+        .app-shell {
+            display: grid;
+            grid-template-columns: var(--nav-w) 1fr var(--right-w);
+            max-width: 1280px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           LEFT NAV
+        ═══════════════════════════════════════════════════ */
+        .nav-sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 8px 14px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .nav-top { display: flex; flex-direction: column; gap: 2px; }
+
+        .nav-logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 9999px;
+            margin-bottom: 10px;
+            transition: background var(--tr);
+        }
+        .nav-logo-wrap:hover { background: var(--accent-dim); }
+        .nav-logo-wrap svg { width: 24px; height: 24px; fill: var(--accent); }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 11px 14px;
+            border-radius: 9999px;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-2);
+            transition: background var(--tr), color var(--tr), transform var(--tr);
+            white-space: nowrap;
+            position: relative;
+        }
+        .nav-item:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-1);
+            transform: translateX(3px);
+        }
+        .nav-item.active { color: var(--text-1); font-weight: 700; }
+        .nav-item.active .nav-icon { color: var(--accent); }
+        .nav-item:hover .nav-icon { color: var(--accent); }
+
+        .nav-icon {
+            width: 22px; height: 22px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            transition: color var(--tr);
+        }
+        .nav-icon svg {
+            width: 20px; height: 20px;
+            fill: none; stroke: currentColor;
+            stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .nav-item.active .nav-icon svg { stroke-width: 2.2; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--accent);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 1px 7px;
+            border-radius: 9999px;
+        }
+
+        .btn-post {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            height: 44px;
+            border-radius: 9999px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            margin-top: 16px;
+            letter-spacing: 0.1px;
+            transition: background var(--tr), transform var(--tr), box-shadow var(--tr);
+            box-shadow: 0 4px 18px rgba(29,155,240,0.28);
+        }
+        .btn-post:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(29,155,240,0.38);
+        }
+        .btn-post:active { transform: scale(.97); }
+        .btn-post svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+        .nav-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background var(--tr), border-color var(--tr);
+            border: 1px solid transparent;
+        }
+        .nav-profile:hover { background: var(--bg-card); border-color: var(--border); }
+
+        .nav-ava {
+            width: 36px; height: 36px;
+            border-radius: 9999px;
+            background: var(--bg-input);
+            flex-shrink: 0; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 13px; color: var(--accent);
+            border: 1.5px solid var(--border-strong);
+        }
+        .nav-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+        .nav-profile-info { flex: 1; overflow: hidden; }
+        .nav-pname {
+            font-size: 13px; font-weight: 700; color: var(--text-1);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nav-phandle {
+            font-size: 11px; color: var(--text-3);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nav-dots { color: var(--text-3); font-size: 14px; letter-spacing: 2px; flex-shrink: 0; }
+
+        /* ═══════════════════════════════════════════════════
+           MAIN COLUMN
+        ═══════════════════════════════════════════════════ */
+        .main-column {
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(4,6,10,0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .top-bar-row {
+            display: flex;
+            align-items: center;
+            height: 52px;
+            padding: 0 18px;
+            gap: 14px;
+        }
+
+        .top-bar-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+        }
+
+        .feed-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+
+        .feed-tab {
+            height: 48px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 600;
+            color: var(--text-3);
+            cursor: pointer;
+            position: relative;
+            transition: color var(--tr), background var(--tr);
+            letter-spacing: 0.1px;
+        }
+        .feed-tab:hover { color: var(--text-2); background: rgba(255,255,255,.015); }
+        .feed-tab.active { color: var(--text-1); font-weight: 700; }
+        .feed-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 32px; height: 3px;
+            border-radius: 2px 2px 0 0;
+            background: var(--accent);
+            box-shadow: 0 0 8px rgba(29,155,240,0.5);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           RIGHT SIDEBAR
+        ═══════════════════════════════════════════════════ */
+        .right-sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 12px 18px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .right-sidebar::-webkit-scrollbar { display: none; }
+
+        /* ── Search wrap with suggestions ── */
+        .search-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+        .search-wrap input {
+            width: 100%;
+            height: 40px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            padding: 0 16px 0 42px;
+            color: var(--text-1);
+            font-family: 'Manrope', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            outline: none;
+            transition: border-color var(--tr), box-shadow var(--tr), background var(--tr);
+        }
+        .search-wrap input:focus {
+            border-color: var(--accent);
+            background: var(--bg-card);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        .search-wrap input::placeholder { color: var(--text-3); }
+        .search-wrap .si {
+            position: absolute;
+            left: 13px; top: 50%; transform: translateY(-50%);
+            color: var(--text-3);
+            display: flex; align-items: center;
+            pointer-events: none;
+            transition: color var(--tr);
+        }
+        .search-wrap:focus-within .si { color: var(--accent); }
+        .search-wrap .si svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+        /* ── Live suggestions dropdown ── */
+        .suggest-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0; right: 0;
+            background: #080c12;
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+            z-index: 500;
+            overflow: hidden;
+            display: none;
+            animation: dropIn .15s cubic-bezier(.4,0,.2,1) both;
+        }
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateY(-6px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .suggest-dropdown.show { display: block; }
+
+        .suggest-section-title {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            padding: 10px 14px 4px;
+        }
+
+        .suggest-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background var(--tr);
+        }
+        .suggest-item:hover { background: rgba(255,255,255,0.04); }
+
+        .suggest-ava {
+            width: 32px; height: 32px;
+            border-radius: 9999px;
+            background: var(--accent-dim);
+            flex-shrink: 0;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 13px; color: var(--accent);
+            border: 1px solid var(--border);
+        }
+        .suggest-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+        .suggest-hash-icon {
+            width: 32px; height: 32px;
+            border-radius: 9999px;
+            background: var(--accent-dim);
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 15px; color: var(--accent);
+            font-family: 'Syne', sans-serif;
+        }
+
+        .suggest-post-icon {
+            width: 32px; height: 32px;
+            border-radius: 9999px;
+            background: var(--purple-dim);
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .suggest-post-icon svg {
+            width: 15px; height: 15px;
+            fill: none; stroke: var(--purple);
+            stroke-width: 1.8; stroke-linecap: round;
+        }
+
+        .suggest-label { flex: 1; overflow: hidden; }
+        .suggest-primary {
+            font-size: 13px; font-weight: 700; color: var(--text-1);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            display: block;
+        }
+        .suggest-secondary {
+            font-size: 11.5px; color: var(--text-3);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            display: block;
+        }
+
+        .suggest-view-all {
+            display: block;
+            padding: 10px 14px;
+            font-size: 12.5px; font-weight: 700;
+            color: var(--accent);
+            cursor: pointer;
+            border-top: 1px solid var(--border);
+            transition: background var(--tr);
+            text-decoration: none;
+        }
+        .suggest-view-all:hover { background: var(--accent-dim); }
+
+        .suggest-empty {
+            padding: 16px 14px;
+            font-size: 13px; color: var(--text-3);
+            text-align: center;
+        }
+
+        .suggest-spinner {
+            display: flex; align-items: center; justify-content: center;
+            padding: 18px;
+        }
+        .suggest-spinner::after {
+            content: '';
+            width: 18px; height: 18px;
+            border: 2px solid var(--accent-dim);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: suggestSpin .6s linear infinite;
+        }
+        @keyframes suggestSpin { to { transform: rotate(360deg); } }
+
+        /* ── Widgets ── */
+        .widget {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 14px;
+            transition: border-color var(--tr);
+        }
+        .widget:hover { border-color: var(--border-strong); }
+
+        .widget-heading {
+            font-family: 'Syne', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--text-1);
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .trend-item {
+            padding: 9px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 0 -9px;
+            transition: background var(--tr);
+        }
+        .trend-item:hover { background: var(--bg-card-hover); }
+
+        .trend-chip {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .chip-tech  { background: var(--accent-dim);  color: var(--accent); }
+        .chip-sport { background: var(--green-dim);   color: var(--green); }
+        .chip-ent   { background: var(--purple-dim);  color: var(--purple); }
+        .chip-world { background: var(--red-dim);     color: var(--red); }
+
+        .trend-name  { font-size: 13.5px; font-weight: 700; color: var(--text-1); margin-bottom: 1px; }
+        .trend-count { font-size: 11.5px; color: var(--text-3); }
+
+        .follow-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px;
+            border-radius: 12px;
+            margin: 0 -9px;
+            transition: background var(--tr);
+            cursor: pointer;
+        }
+        .follow-item:hover { background: var(--bg-card-hover); }
+
+        .follow-ava {
+            width: 38px; height: 38px;
+            border-radius: 9999px;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 14px;
+            border: 1px solid var(--border);
+        }
+
+        .follow-info { flex: 1; overflow: hidden; }
+        .follow-name  { font-size: 13px; font-weight: 700; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .follow-handle{ font-size: 11.5px; color: var(--text-3); }
+
+        .btn-follow-sm {
+            height: 28px;
+            padding: 0 13px;
+            border-radius: 9999px;
+            border: 1.5px solid var(--border-strong);
+            background: transparent;
+            color: var(--text-2);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: all var(--tr);
+        }
+        .btn-follow-sm:hover { border-color: var(--accent); color: #fff; background: var(--accent); }
+        .btn-follow-sm.following { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        .widget-link {
+            display: block;
+            margin-top: 8px;
+            padding: 4px 9px;
+            margin-left: -9px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--accent);
+            border-radius: 8px;
+            transition: background var(--tr);
+        }
+        .widget-link:hover { background: var(--accent-dim); }
+
+        /* ═══════════════════════════════════════════════════
+           MOBILE NAV
+        ═══════════════════════════════════════════════════ */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 58px;
+            background: rgba(4,6,10,0.96);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            z-index: 200;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 8px;
+        }
+        .mob-item {
+            display: flex; align-items: center; justify-content: center;
+            width: 46px; height: 46px;
+            border-radius: 9999px;
+            transition: background var(--tr);
+            position: relative;
+        }
+        .mob-item:hover { background: var(--bg-card); }
+        .mob-item svg {
+            width: 21px; height: 21px;
+            fill: none; stroke: var(--text-2);
+            stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+            transition: stroke var(--tr);
+        }
+        .mob-item.active svg { stroke: var(--accent); }
+        .mob-dot {
+            position: absolute; top: 8px; right: 8px;
+            width: 7px; height: 7px;
+            background: var(--accent);
+            border-radius: 9999px;
+            border: 2px solid var(--bg);
+        }
+        .mob-fab {
+            width: 48px; height: 48px;
+            border-radius: 9999px;
+            background: var(--accent);
+            border: none;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 18px rgba(29,155,240,0.38);
+            transition: transform var(--tr), background var(--tr);
+        }
+        .mob-fab:hover { background: var(--accent-hover); transform: scale(1.06); }
+        .mob-fab svg { width: 19px; height: 19px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; }
+
+        /* ═══════════════════════════════════════════════════
+           SWAL DARK
+        ═══════════════════════════════════════════════════ */
+        .swal2-popup {
+            background: #0a0f1a !important;
+            color: #eef0f3 !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 22px !important;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.75) !important;
+            font-family: 'Manrope', sans-serif !important;
+        }
+        .swal2-title { color: #eef0f3 !important; font-family: 'Syne', sans-serif !important; letter-spacing: -0.3px !important; }
+        .swal2-html-container { color: #7a8a9a !important; }
+        .swal2-confirm {
+            background: #1d9bf0 !important;
+            border-radius: 9999px !important;
+            font-weight: 700 !important;
+            font-family: 'Manrope', sans-serif !important;
+            box-shadow: 0 4px 14px rgba(29,155,240,0.3) !important;
+        }
+        .swal2-cancel {
+            background: rgba(255,255,255,0.06) !important;
+            color: #eef0f3 !important;
+            border-radius: 9999px !important;
+            font-weight: 700 !important;
+        }
+        .swal2-confirm:focus, .swal2-cancel:focus { box-shadow: none !important; }
+        .swal2-icon.swal2-error   { border-color: #f4212e !important; color: #f4212e !important; }
+        .swal2-icon.swal2-warning { border-color: #f59e0b !important; color: #f59e0b !important; }
+        .swal2-icon.swal2-success { border-color: #10d97a !important; color: #10d97a !important; }
+        .swal2-icon.swal2-success [class^=swal2-success-line] { background: #10d97a !important; }
+        .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(16,217,122,.2) !important; }
+        .swal2-timer-progress-bar { background: #1d9bf0 !important; }
+
+        /* ═══════════════════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════════════════ */
+        @media (max-width: 1200px) {
+            :root { --right-w: 0px; }
+            .right-sidebar { display: none; }
+            .app-shell { grid-template-columns: var(--nav-w) 1fr; }
+        }
+        @media (max-width: 860px) {
+            :root { --nav-w: 68px; }
+            .nav-item span:not(.nav-icon):not(.nav-badge) { display: none; }
+            .btn-post span { display: none; }
+            .btn-post { width: 44px; padding: 0; }
+            .nav-profile-info, .nav-dots { display: none; }
+            .nav-sidebar { padding: 8px 8px 14px; align-items: center; }
+            .nav-item { justify-content: center; padding: 11px; }
+            .nav-badge { position: absolute; top: 4px; right: 4px; margin: 0; font-size: 8px; padding: 1px 5px; }
+        }
+        @media (max-width: 600px) {
+            :root { --nav-w: 0px; }
+            .nav-sidebar { display: none; }
+            .app-shell { grid-template-columns: 1fr; }
+            .mobile-nav { display: flex; }
+            .main-column { padding-bottom: 58px; }
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+
+{% if messages %}
+<script id="django-messages" type="application/json">
+[{% for message in messages %}{"level":"{{ message.tags }}","text":"{{ message|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
+</script>
+{% endif %}
+
+<div class="app-shell">
+
+    <!-- ═══════════════════════════════════════
+         LEFT NAV
+    ═══════════════════════════════════════ -->
+    <nav class="nav-sidebar">
+        <div class="nav-top">
+            <a href="#" class="nav-logo-wrap" title="Home">
+                <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"/>
+                </svg>
+            </a>
+
+            <a href="#" class="nav-item {% block nav_home %}{% endblock %}">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </span>
+                <span>Home</span>
+            </a>
+
+            <a href="#" class="nav-item {% block nav_explore %}{% endblock %}">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <span>Explore</span>
+            </a>
+
+            <a href="#" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </span>
+                <span>Notifications</span>
+                <span class="nav-badge">3</span>
+            </a>
+
+            <a href="#" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </span>
+                <span>Messages</span>
+            </a>
+
+            <a href="#" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                </span>
+                <span>Bookmarks</span>
+            </a>
+
+            <a href="{% url 'my_profile'%}" class="nav-item {% block nav_profile %}{% endblock %}">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <span>Profile</span>
+            </a>
+
+            <button class="btn-post" id="openPostModal">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Post</span>
+            </button>
+        </div>
+
+        <div class="nav-profile" id="profileMenuTrigger" title="Account options">
+            <div class="nav-ava">
+                {% if request.user.profile_picture %}
+                    <img src="{{ request.user.profile_picture.url }}" alt="avatar">
+                {% else %}
+                    {{ request.user.first_name|first|upper|default:request.user.username|first|upper }}
+                {% endif %}
+            </div>
+            <div class="nav-profile-info">
+                <div class="nav-pname">{{ request.user.first_name|default:request.user.username }}</div>
+                <div class="nav-phandle">@{{ request.user.username }}</div>
+            </div>
+            <div class="nav-dots">···</div>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════ -->
+    <main class="main-column">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ═══════════════════════════════════════
+         RIGHT SIDEBAR
+    ═══════════════════════════════════════ -->
+    <aside class="right-sidebar">
+
+        <!-- Search input with live suggestions -->
+        <div class="search-wrap">
+            <span class="si">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input
+                type="text"
+                id="sidebarSearchInput"
+                placeholder="Search Twitter Mini"
+                autocomplete="off"
+            >
+            <div class="suggest-dropdown" id="suggestDropdown"></div>
+        </div>
+
+        {% block right_sidebar %}
+        <div class="widget">
+            <p class="widget-heading">What's happening</p>
+            <div class="trend-item">
+                <span class="trend-chip chip-tech">Technology</span>
+                <p class="trend-name">#OpenAI</p>
+                <p class="trend-count">124K posts</p>
+            </div>
+            <div class="trend-item">
+                <span class="trend-chip chip-sport">Sports</span>
+                <p class="trend-name">#WorldCup2026</p>
+                <p class="trend-count">89K posts</p>
+            </div>
+            <div class="trend-item">
+                <span class="trend-chip chip-ent">Entertainment</span>
+                <p class="trend-name">#Oscars</p>
+                <p class="trend-count">52K posts</p>
+            </div>
+            <div class="trend-item">
+                <span class="trend-chip chip-world">World</span>
+                <p class="trend-name">#Election2026</p>
+                <p class="trend-count">38K posts</p>
+            </div>
+            <a class="widget-link" href="#">Show more trends →</a>
+        </div>
+
+        <div class="widget">
+            <p class="widget-heading">Who to follow</p>
+            <div class="follow-item">
+                <div class="follow-ava" style="background:rgba(29,155,240,0.1);color:#1d9bf0;">E</div>
+                <div class="follow-info">
+                    <p class="follow-name">Elon Musk</p>
+                    <p class="follow-handle">@elonmusk</p>
+                </div>
+                <button class="btn-follow-sm">Follow</button>
+            </div>
+            <div class="follow-item">
+                <div class="follow-ava" style="background:rgba(16,217,122,0.1);color:#10d97a;">N</div>
+                <div class="follow-info">
+                    <p class="follow-name">NASA</p>
+                    <p class="follow-handle">@NASA</p>
+                </div>
+                <button class="btn-follow-sm">Follow</button>
+            </div>
+            <div class="follow-item">
+                <div class="follow-ava" style="background:rgba(139,92,246,0.1);color:#8b5cf6;">B</div>
+                <div class="follow-info">
+                    <p class="follow-name">BBC News</p>
+                    <p class="follow-handle">@BBCNews</p>
+                </div>
+                <button class="btn-follow-sm">Follow</button>
+            </div>
+            <a class="widget-link" href="#">Find more people →</a>
+        </div>
+        {% endblock %}
+
+        <p style="font-size:11px;color:var(--text-3);line-height:2;padding:0 4px 16px;">
+            Terms &middot; Privacy &middot; Cookies &middot; © 2026 Twitter Mini
+        </p>
+    </aside>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MOBILE BOTTOM NAV
+═══════════════════════════════════════ -->
+<nav class="mobile-nav">
+    <a href="#" class="mob-item {% block mob_home %}{% endblock %}">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+    <a href="#" class="mob-item {% block mob_explore %}{% endblock %}">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </a>
+    <button class="mob-fab" id="openPostModalMob">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <a href="#" class="mob-item">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="mob-dot"></span>
+    </a>
+    <a href="{% url 'my_profile' %}" class="mob-item {% block mob_profile %}{% endblock %}">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </a>
+</nav>
+
+{% block modals %}{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script>
+(function () {
+
+    /* ══════════════════════════════════════════
+       DJANGO MESSAGES → SWEETALERT2
+    ══════════════════════════════════════════ */
+    const msgEl = document.getElementById('django-messages');
+    const SD = {
+        background: '#0a0f1a', color: '#eef0f3',
+        confirmButtonColor: '#1d9bf0', confirmButtonText: 'OK',
+        customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+    };
+    function icon(t) {
+        return !t ? 'info' : t.includes('error') ? 'error' : t.includes('warning') ? 'warning' : t.includes('success') ? 'success' : 'info';
+    }
+    function fire(msgs, i) {
+        if (!msgs || i >= msgs.length) return;
+        Swal.fire({ ...SD, icon: icon(msgs[i].level), title: msgs[i].text }).then(() => fire(msgs, i + 1));
+    }
+    if (msgEl) { try { fire(JSON.parse(msgEl.textContent), 0); } catch (e) {} }
+
+
+    /* ══════════════════════════════════════════
+       PROFILE MENU → LOGOUT
+    ══════════════════════════════════════════ */
+    const trigger = document.getElementById('profileMenuTrigger');
+    if (trigger) {
+        trigger.addEventListener('click', () => {
+            Swal.fire({
+                ...SD,
+                title: 'Account',
+                html: `<div style="padding:4px 0 8px">
+                           <p style="color:#7a8a9a;font-size:13px;margin-bottom:6px">Signed in as</p>
+                           <p style="color:#eef0f3;font-weight:800;font-size:16px;font-family:Syne,sans-serif">@{{ request.user.username }}</p>
+                       </div>`,
+                showCancelButton: true,
+                cancelButtonText: 'Close',
+                confirmButtonText: 'Log out',
+                confirmButtonColor: '#f4212e',
+                cancelButtonColor: 'rgba(255,255,255,0.06)',
+                reverseButtons: true,
+            }).then(r => {
+                if (!r.isConfirmed) return;
+                const f = document.createElement('form');
+                f.method = 'POST';
+                f.action = "{% url 'logout_view' %}";
+                const c = document.createElement('input');
+                c.type = 'hidden'; c.name = 'csrfmiddlewaretoken'; c.value = '{{ csrf_token }}';
+                f.appendChild(c); document.body.appendChild(f); f.submit();
+            });
+        });
+    }
+
+
+    /* ══════════════════════════════════════════
+       SIDEBAR FOLLOW TOGGLES (widget)
+    ══════════════════════════════════════════ */
+    document.querySelectorAll('.btn-follow-sm').forEach(b => {
+        b.addEventListener('click', e => {
+            e.stopPropagation();
+            const on = b.classList.toggle('following');
+            b.textContent = on ? 'Following' : 'Follow';
+        });
+    });
+
+
+    /* ══════════════════════════════════════════
+       MOBILE FAB → DESKTOP POST MODAL
+    ══════════════════════════════════════════ */
+    const mob  = document.getElementById('openPostModalMob');
+    const desk = document.getElementById('openPostModal');
+    if (mob && desk) mob.addEventListener('click', () => desk.click());
+
+
+    /* ══════════════════════════════════════════
+       LIVE SEARCH SUGGESTIONS
+    ══════════════════════════════════════════ */
+    const searchInput  = document.getElementById('sidebarSearchInput');
+    const suggestBox   = document.getElementById('suggestDropdown');
+
+    if (searchInput && suggestBox) {
+
+        const SUGGEST_URL = "#";
+        const SEARCH_URL  = "#";
+        let debounceTimer;
+        let lastQuery = '';
+
+        function showDropdown() { suggestBox.classList.add('show'); }
+        function hideDropdown() { suggestBox.classList.remove('show'); }
+
+        function setLoading() {
+            suggestBox.innerHTML = '<div class="suggest-spinner"></div>';
+            showDropdown();
+        }
+
+        function escHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function renderDropdown(data, query) {
+            const { people = [], hashtags = [], posts = [] } = data;
+            const total = people.length + hashtags.length + posts.length;
+
+            if (total === 0) {
+                suggestBox.innerHTML = `<div class="suggest-empty">No results for "<strong>${escHtml(query)}</strong>"</div>`;
+                showDropdown();
+                return;
+            }
+
+            let html = '';
+
+            /* People */
+            if (people.length) {
+                html += `<div class="suggest-section-title">People</div>`;
+                people.forEach(p => {
+                    const initial = (p.display_name || p.username).charAt(0).toUpperCase();
+                    const ava = p.avatar_url
+                        ? `<img src="${escHtml(p.avatar_url)}" alt="${escHtml(p.username)}">`
+                        : initial;
+                    html += `
+                    <a class="suggest-item" href="/profile/${escHtml(p.username)}/">
+                        <div class="suggest-ava">${ava}</div>
+                        <div class="suggest-label">
+                            <span class="suggest-primary">${escHtml(p.display_name || p.username)}</span>
+                            <span class="suggest-secondary">@${escHtml(p.username)}</span>
+                        </div>
+                    </a>`;
+                });
+            }
+
+            /* Hashtags */
+            if (hashtags.length) {
+                html += `<div class="suggest-section-title">Hashtags</div>`;
+                hashtags.forEach(h => {
+                    html += `
+                    <a class="suggest-item" href="/hashtags/${encodeURIComponent(h.name)}/">
+                        <div class="suggest-hash-icon">#</div>
+                        <div class="suggest-label">
+                            <span class="suggest-primary">#${escHtml(h.name)}</span>
+                            <span class="suggest-secondary">${h.posts_count} post${h.posts_count !== 1 ? 's' : ''}</span>
+                        </div>
+                    </a>`;
+                });
+            }
+
+            /* Posts */
+            if (posts.length) {
+                html += `<div class="suggest-section-title">Posts</div>`;
+                posts.forEach(p => {
+                    html += `
+                    <a class="suggest-item" href="/posts/${p.id}/">
+                        <div class="suggest-post-icon">
+                            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <div class="suggest-label">
+                            <span class="suggest-primary">${escHtml(p.snippet)}</span>
+                            <span class="suggest-secondary">@${escHtml(p.username)}</span>
+                        </div>
+                    </a>`;
+                });
+            }
+
+            /* View all footer */
+            html += `<a class="suggest-view-all" href="${SEARCH_URL}?q=${encodeURIComponent(query)}&tab=people">
+                View all results for "${escHtml(query)}" →
+            </a>`;
+
+            suggestBox.innerHTML = html;
+            showDropdown();
+        }
+
+        /* Input handler */
+        searchInput.addEventListener('input', function () {
+            const q = this.value.trim();
+            clearTimeout(debounceTimer);
+
+            if (q.length < 2) { hideDropdown(); return; }
+            if (q === lastQuery) { showDropdown(); return; }
+
+            setLoading();
+
+            debounceTimer = setTimeout(() => {
+                lastQuery = q;
+                fetch(`${SUGGEST_URL}?q=${encodeURIComponent(q)}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => renderDropdown(data, q))
+                .catch(() => hideDropdown());
+            }, 250);
+        });
+
+        /* Enter → full search page */
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && this.value.trim()) {
+                e.preventDefault();
+                window.location.href = `${SEARCH_URL}?q=${encodeURIComponent(this.value.trim())}&tab=people`;
+            }
+            if (e.key === 'Escape') hideDropdown();
+        });
+
+        /* Re-show on focus if already has content */
+        searchInput.addEventListener('focus', function () {
+            if (this.value.trim().length >= 2 && suggestBox.innerHTML) showDropdown();
+        });
+
+        /* Close on outside click */
+        document.addEventListener('click', function (e) {
+            if (!searchInput.contains(e.target) && !suggestBox.contains(e.target)) {
+                hideDropdown();
+            }
+        });
+    }
+
+})();
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

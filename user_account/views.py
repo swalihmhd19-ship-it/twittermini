@@ -65,7 +65,7 @@ def start_page(request):
 # ============================================================
 @login_required
 def index(request):
-    return render(request, "index/index.html")
+    return render(request, "index/base.html")
 
 
 # ============================================================
@@ -346,8 +346,6 @@ def setup_profile_view(request):
     return render(request, "auth/profile_setup.html")
 
 
-def index(request):
-    return render(request,'index/index.html')
 
 
 # ============================================================
@@ -406,7 +404,212 @@ def logout_view(request):
     messages.success(request, "you have been logged out successfully.")
     return redirect("start_page")
 
+# ============================================================
+# PROFILE DETAIL VIEW
+# ============================================================
+         
+@login_required(login_url="start_page")
+def profile_detail_view(request, username=None):
+    if username:
+        profile_user = get_object_or_404(CustomUser, username=username)
+    else:
+        profile_user = request.user
+
+    is_following = False
+    if request.user.is_authenticated and request.user != profile_user:
+        is_following = profile_user.followers.filter(follower=request.user).exists()
+
+    # Privacy check for private accounts
+    if profile_user.is_private and profile_user != request.user:
+        if not is_following:
+            context = {
+                "profile_user": profile_user,
+                "is_following": False,
+                "followers_count": profile_user.followers.count(),
+                "following_count": profile_user.following.count(),
+                "is_own_profile": request.user == profile_user,
+
+                # empty data
+                "posts": [],
+                "replies": [],
+                "media_posts": [],
+                "liked_posts": [],
+
+                "viewer_liked_ids": set(),
+                "viewer_reshared_ids": set(),
+            }
+
+            return render(request, "profile/profile_detail.html", context)
+
+    # ── Posts (original posts + reshares, excluding deleted) ──
+    posts = Post.objects.filter(
+        user=profile_user,
+        is_deleted=False
+    ).select_related("user", "parent").prefetch_related("images", "likes", "comments").order_by("-created_at")
+
+    # ── Replies (comments made by this user on other posts) ──
+    replies = Comment.objects.filter(
+        user=profile_user,
+        is_deleted=False,
+        parent__isnull=True          # top-level replies only
+    ).select_related("user", "post", "post__user").order_by("-created_at")
+
+    # ── Media (posts that have at least one image) ──
+    media_posts = Post.objects.filter(
+        user=profile_user,
+        is_deleted=False,
+        images__isnull=False         # has at least one PostImage
+    ).distinct().select_related("user").prefetch_related("images").order_by("-created_at")
+
+    # ── Likes (posts this user has liked) ──
+    liked_posts = Post.objects.filter(
+        likes__user=profile_user,
+        is_deleted=False
+    ).select_related("user").prefetch_related("images", "likes").order_by("-likes__created_at")
+
+    # ── Viewer's interaction sets (for like/reshare state) ──
+    viewer_liked_ids    = set(Like.objects.filter(user=request.user).values_list("post_id", flat=True))
+    viewer_reshared_ids = set(
+        Post.objects.filter(user=request.user, parent__isnull=False).values_list("parent_id", flat=True)
+    )
+
+    has_pending_request = FollowRequest.objects.filter(
+    sender=request.user,
+    receiver=profile_user
+).exists()
+    
+    is_locked = profile_user.is_private and request.user != profile_user and not is_following
 
 
+    context = {
+        "profile_user":       profile_user,
+        "is_following":       is_following,
+        "followers_count":    profile_user.followers.count(),
+        "following_count":    profile_user.following.count(),
+        "is_own_profile":     request.user == profile_user,
+        # tab data
+        "posts":              posts,
+        "replies":            replies,
+        "media_posts":        media_posts,
+        "liked_posts":        liked_posts,
+        # viewer interaction state
+        "viewer_liked_ids":    viewer_liked_ids,
+        "viewer_reshared_ids": viewer_reshared_ids,
+        "has_pending_request": has_pending_request,
+        "is_locked": is_locked,
+    }
 
+    return render(request, "profile/profile_detail.html", context)
+# ============================================================
+# EDIT PROFILE VIEW
+# ============================================================
+
+@login_required(login_url="start_page")
+@require_http_methods(["GET", "POST"])
+def edit_profile_view(request):
+    user = request.user
+
+    if request.method == "POST":
+        display_name = request.POST.get("display_name", "").strip()
+        username     = request.POST.get("username", "").strip()
+        bio          = request.POST.get("bio", "").strip()
+        avatar       = request.FILES.get("avatar")
+        banner       = request.FILES.get("banner")
+        is_private   = request.POST.get("is_private") == "on"
+
+        if not display_name:
+            messages.error(request, "Display name required.")
+            return redirect("edit_profile")
+
+        if len(username) < 3:
+            messages.error(request, "Username must be at least 3 characters.")
+            return redirect("edit_profile")
+
+        if not re.match(r'^[A-Za-z0-9_]+$', username):
+            messages.error(request, "Username can only contain letters, numbers and underscore.")
+            return redirect("edit_profile")
+
+        if CustomUser.objects.filter(username__iexact=username).exclude(id=user.id).exists():
+            messages.error(request, "Username already taken.")
+            return redirect("edit_profile")
+
+        try:
+            with transaction.atomic():
+                user.first_name = display_name
+                user.username   = username
+                user.bio        = bio
+                user.is_private = is_private
+                if avatar:
+                    if user.profile_picture:
+                        user.profile_picture.delete(save=False)
+                    user.profile_picture = avatar
+                if banner and hasattr(user, 'banner_picture'):
+                    if user.banner_picture:
+                        user.banner_picture.delete(save=False)
+                    user.banner_picture = banner
+                user.save()
+
+            messages.success(request, "Profile updated successfully.")
+            return redirect("profile_detail", username=user.username)
+
+        except Exception:
+            messages.error(request, "Error updating profile.")
+            return redirect("edit_profile")
+
+    return render(request, "profile/edit_profile.html", {"user": user})
+
+
+# ============================================================
+# TOGGLE FOLLOW VIEW
+# ============================================================
+
+@login_required
+@require_POST
+def toggle_follow_view(request, username):
+    target_user = get_object_or_404(CustomUser, username=username)
+
+    if request.user == target_user:
+        return JsonResponse({"success": False, "message": "You cannot follow yourself."}, status=400)
+
+    follow_instance = Follow.objects.filter(follower=request.user, following=target_user).first()
+
+    try:
+        with transaction.atomic():
+            if follow_instance:
+                follow_instance.delete()
+                is_following = False
+            else:
+                Follow.objects.create(follower=request.user, following=target_user)
+                is_following = True
+    except Exception:
+        return JsonResponse({"success": False, "message": "Something went wrong."}, status=500)
+
+    return JsonResponse({
+        "success":         True,
+        "is_following":    is_following,
+        "followers_count": target_user.followers.count(),
+        "following_count": request.user.following.count(),
+    })
+
+
+# ============================================================
+# FOLLOWERS LIST VIEW
+# ============================================================
+
+@login_required
+def followers_list_view(request, username):
+    user      = get_object_or_404(CustomUser, username=username)
+    followers = user.followers.select_related("follower")
+    return render(request, "profile/followers_list.html", {"profile_user": user, "followers": followers})
+
+
+# ============================================================
+# FOLLOWING LIST VIEW
+# ============================================================
+
+@login_required
+def following_list_view(request, username):
+    user      = get_object_or_404(CustomUser, username=username)
+    following = user.following.select_related("following")
+    return render(request, "profile/following_list.html", {"profile_user": user, "following": following})
             

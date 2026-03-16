@@ -11,5 +11,12 @@ urlpatterns = [
     path('index/', views.index,name='index'),
     path('signin/', views.login_view,name='login_view'),
     path('logout/',views.logout_view, name='logout_view'),
+    path('profile/', views.profile_detail_view, name='my_profile'),
+    path('profile/edit/', views.edit_profile_view, name='edit_profile'),
+    path('profile/<str:username>/', views.profile_detail_view, name='profile_detail'),
+    path("profile/<str:username>/", views.toggle_follow_view, name="toggle_follow"),
+    path("<str:username>/followers/", views.followers_list_view, name="followers_list"),
+    path("<str:username>/following/", views.following_list_view, name="following_list"),
+    
 
 ]
