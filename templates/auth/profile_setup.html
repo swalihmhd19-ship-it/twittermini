@@ -1,0 +1,649 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Mini — Set Up Profile</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:          #000000;
+            --bg-body:     #0a0a0a;
+            --accent-blue: #1d9bf0;
+            --text-white:  #e7e9ea;
+            --text-gray:   #71767b;
+            --border:      #333639;
+            --danger:      #f4212e;
+            --success:     #00ba7c;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient gradient — consistent with all pages */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(29,155,240,0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(120,86,255,0.12) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes gradientShift {
+            0%,100% { transform: rotate(0deg) scale(1); }
+            33%      { transform: rotate(120deg) scale(1.05); }
+            66%      { transform: rotate(240deg) scale(0.97); }
+        }
+
+        /* ── Card ── */
+        .card {
+            position: relative;
+            z-index: 1;
+            background: var(--bg);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px 80px 48px;
+            animation: cardIn .2s cubic-bezier(.4,0,.2,1) both;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(12px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── Logo ── */
+        .logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .logo svg {
+            width: 30px;
+            height: 30px;
+            fill: var(--text-white);
+        }
+
+        /* ── Heading ── */
+        h1 {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-white);
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        /* ── Avatar ── */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 28px;
+            gap: 10px;
+        }
+
+        .avatar-picker {
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .avatar-ring {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: border-color .2s;
+            position: relative;
+        }
+        .avatar-ring:hover {
+            border-color: var(--accent-blue);
+        }
+
+        /* Camera icon overlay */
+        .avatar-ring .camera-icon {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-gray);
+            font-size: 11px;
+            font-weight: 500;
+            transition: color .2s;
+            pointer-events: none;
+        }
+        .avatar-ring:hover .camera-icon { color: var(--accent-blue); }
+
+        .avatar-ring img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        .avatar-ring img.visible { display: block; }
+
+        /* Hide placeholder when image is visible */
+        .avatar-ring img.visible ~ .camera-icon { display: none; }
+
+        .avatar-hint {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+        .avatar-error {
+            font-size: 12px;
+            color: var(--danger);
+            display: none;
+        }
+        .avatar-error.show { display: block; }
+
+        /* ── Floating-label fields ── */
+        .field {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .field input,
+        .field textarea {
+            width: 100%;
+            box-sizing: border-box;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-white);
+            font-size: 17px;
+            font-family: inherit;
+            outline: none;
+            caret-color: var(--accent-blue);
+            transition: border-color .2s;
+            -webkit-appearance: none;
+            padding: 22px 12px 6px;
+        }
+
+        .field input {
+            height: 56px;
+        }
+
+        .field textarea {
+            height: 100px;
+            resize: none;
+            padding-top: 24px;
+        }
+
+        .field input:focus,
+        .field textarea:focus {
+            border-color: var(--accent-blue);
+            border-width: 2px;
+            padding: 23px 11px 5px;
+        }
+
+        .field textarea:focus {
+            padding-top: 25px;
+        }
+
+        .field input.has-error,
+        .field textarea.has-error {
+            border-color: var(--danger) !important;
+        }
+
+        /* floating label */
+        .field label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-gray);
+            font-size: 17px;
+            pointer-events: none;
+            transition: top .15s, font-size .15s, color .15s, transform .15s;
+            line-height: 1;
+        }
+
+        /* Textarea label sits near top */
+        .field.textarea-field label {
+            top: 18px;
+            transform: none;
+        }
+
+        .field input:focus + label,
+        .field input:not(:placeholder-shown) + label {
+            top: 10px;
+            font-size: 12px;
+            transform: none;
+            color: var(--text-gray);
+        }
+        .field input:focus + label { color: var(--accent-blue); }
+
+        .field textarea:focus + label,
+        .field textarea:not(:placeholder-shown) + label {
+            top: 8px;
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+        .field textarea:focus + label { color: var(--accent-blue); }
+
+        /* char counter */
+        .char-counter {
+            font-size: 12px;
+            color: var(--text-gray);
+            text-align: right;
+            margin-top: 4px;
+            padding-right: 2px;
+            transition: color .2s;
+        }
+        .char-counter.warn { color: var(--danger); }
+
+        /* inline field error */
+        .field-error {
+            display: none;
+            font-size: 13px;
+            color: var(--danger);
+            margin-top: 4px;
+            padding-left: 2px;
+        }
+        .field-error.show { display: block; }
+
+        /* username availability indicator */
+        .username-status {
+            font-size: 12px;
+            margin-top: 4px;
+            padding-left: 2px;
+            min-height: 16px;
+        }
+        .username-status.ok      { color: var(--success); }
+        .username-status.error   { color: var(--danger); }
+        .username-status.neutral { color: var(--text-gray); }
+
+        /* ── Submit button ── */
+        .btn-submit {
+            width: 100%;
+            height: 52px;
+            border-radius: 9999px;
+            border: none;
+            background: var(--text-white);
+            color: #0f1419;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: not-allowed;
+            opacity: 0.4;
+            transition: background .2s, opacity .2s, transform .1s;
+            letter-spacing: 0.1px;
+        }
+        .btn-submit.ready {
+            opacity: 1;
+            cursor: pointer;
+        }
+        .btn-submit.ready:hover  { background: #d0d3d6; }
+        .btn-submit.ready:active { transform: scale(.985); }
+
+        /* ── Skip link ── */
+        .skip-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: var(--text-gray);
+            font-size: 14px;
+            text-decoration: none;
+            transition: color .15s;
+        }
+        .skip-link:hover { color: var(--text-white); }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .card { border-radius: 0; min-height: 100vh; padding: 20px 24px 40px; }
+        }
+
+        /* ── SweetAlert2 dark theme overrides ── */
+        .swal2-popup {
+            background: #1e2732 !important;
+            color: #e7e9ea !important;
+            border-radius: 16px !important;
+        }
+        .swal2-title { color: #e7e9ea !important; }
+        .swal2-html-container { color: #8b98a5 !important; }
+        .swal2-confirm {
+            background: #1d9bf0 !important;
+            border-radius: 20px !important;
+            font-weight: 700 !important;
+        }
+        .swal2-confirm:focus { box-shadow: none !important; }
+        .swal2-icon.swal2-error { border-color: #f4212e !important; color: #f4212e !important; }
+        .swal2-icon.swal2-warning { border-color: #ffd400 !important; color: #ffd400 !important; }
+        .swal2-icon.swal2-success { border-color: #00ba7c !important; color: #00ba7c !important; }
+        .swal2-icon.swal2-success [class^=swal2-success-line] { background: #00ba7c !important; }
+        .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(0,186,124,.3) !important; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Django messages for SweetAlert -->
+    {% if messages %}
+    <script id="django-messages" type="application/json">
+    [
+        {% for message in messages %}
+        {
+            "level": "{{ message.tags }}",
+            "text": "{{ message|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
+    {% endif %}
+
+<div class="card">
+
+    <!-- Logo -->
+    <div class="logo">
+        <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+            <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"/>
+        </svg>
+    </div>
+
+    <h1>Set up your profile</h1>
+    <p class="subtitle">A few details and you're ready to go.</p>
+
+    <form method="POST" enctype="multipart/form-data" id="profileForm" novalidate>
+        {% csrf_token %}
+
+        <!-- Avatar -->
+        <div class="avatar-section">
+            <label for="avatarInput" class="avatar-picker" aria-label="Upload profile photo">
+                <div class="avatar-ring" id="avatarRing">
+                    <img id="avatarPreview" alt="Avatar preview">
+                    <div class="camera-icon">
+                        <!-- Camera SVG -->
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 15.2A3.2 3.2 0 1 1 15.2 12 3.2 3.2 0 0 1 12 15.2zm0-5.6A2.4 2.4 0 1 0 14.4 12 2.4 2.4 0 0 0 12 9.6zM9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3zm3 13a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"/>
+                        </svg>
+                        Photo
+                    </div>
+                </div>
+            </label>
+            <input type="file" id="avatarInput" name="avatar" accept="image/*" hidden>
+            <p class="avatar-hint">Optional — click to upload a photo</p>
+            <p class="avatar-error" id="avatarError"></p>
+        </div>
+
+        <!-- Display Name -->
+        <div class="field">
+            <input type="text"
+                   name="display_name"
+                   id="nameInput"
+                   placeholder=" "
+                   maxlength="50">
+            <label for="nameInput">Name</label>
+            <div class="char-counter" id="nameCounter">50</div>
+            <span class="field-error" id="nameError">Please enter your name.</span>
+        </div>
+
+        <!-- Username -->
+        <div class="field">
+            <input type="text"
+                   name="username"
+                   id="usernameInput"
+                   placeholder=" "
+                   maxlength="15">
+            <label for="usernameInput">Username</label>
+            <div class="char-counter" id="usernameCounter">15</div>
+            <span class="field-error" id="usernameError">Username must be at least 3 characters.</span>
+            <p class="username-status neutral" id="usernameStatus"></p>
+        </div>
+
+        <!-- Bio -->
+        <div class="field textarea-field">
+            <textarea name="bio"
+                      id="bioInput"
+                      placeholder=" "
+                      maxlength="160"></textarea>
+            <label for="bioInput">Bio (optional)</label>
+            <div class="char-counter" id="bioCounter">160</div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-submit" disabled>
+            Next
+        </button>
+
+    </form>
+
+    <a href="{% url 'index' %}" class="skip-link">Skip for now</a>
+
+</div>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<script>
+(function () {
+
+    /* ══════════════════════════════════════════
+       1. SWEETALERT2 — Fire Django messages
+    ══════════════════════════════════════════ */
+    const msgEl = document.getElementById('django-messages');
+
+    function toIcon(tags) {
+        if (!tags) return 'info';
+        if (tags.includes('error'))   return 'error';
+        if (tags.includes('warning')) return 'warning';
+        if (tags.includes('success')) return 'success';
+        return 'info';
+    }
+
+    const swalDefaults = {
+        background: '#1e2732',
+        color: '#e7e9ea',
+        confirmButtonColor: '#1d9bf0',
+        confirmButtonText: 'OK',
+        customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+    };
+
+    function fireMessages(msgs, index) {
+        if (!msgs || index >= msgs.length) return;
+        const m = msgs[index];
+        Swal.fire({
+            ...swalDefaults,
+            icon: toIcon(m.level),
+            title: m.text,
+        }).then(() => fireMessages(msgs, index + 1));
+    }
+
+    if (msgEl) {
+        let msgs;
+        try { msgs = JSON.parse(msgEl.textContent); } catch (e) { msgs = []; }
+        fireMessages(msgs, 0);
+    }
+
+
+    /* ══════════════════════════════════════════
+       2. AVATAR PREVIEW
+    ══════════════════════════════════════════ */
+    const avatarInput       = document.getElementById('avatarInput');
+    const avatarPreview     = document.getElementById('avatarPreview');
+    const avatarRing        = document.getElementById('avatarRing');
+    const avatarError       = document.getElementById('avatarError');
+    const MAX_AVATAR_MB     = 5;
+
+    avatarInput.addEventListener('change', () => {
+        const file = avatarInput.files[0];
+        avatarError.classList.remove('show');
+
+        if (!file) return;
+
+        // Validate type
+        if (!file.type.startsWith('image/')) {
+            avatarError.textContent = 'Please upload a valid image file.';
+            avatarError.classList.add('show');
+            avatarInput.value = '';
+            return;
+        }
+
+        // Validate size (max 5 MB)
+        if (file.size > MAX_AVATAR_MB * 1024 * 1024) {
+            avatarError.textContent = `Image must be under ${MAX_AVATAR_MB} MB.`;
+            avatarError.classList.add('show');
+            avatarInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            avatarPreview.src = e.target.result;
+            avatarPreview.classList.add('visible');
+            avatarRing.style.borderStyle = 'solid';
+            avatarRing.style.borderColor = '#1d9bf0';
+        };
+        reader.readAsDataURL(file);
+    });
+
+
+    /* ══════════════════════════════════════════
+       3. CHARACTER COUNTERS
+    ══════════════════════════════════════════ */
+    function setupCounter(input, counterEl, max, warnAt) {
+        function update() {
+            const remaining = max - input.value.length;
+            counterEl.textContent = remaining;
+            counterEl.classList.toggle('warn', remaining <= (warnAt ?? Math.floor(max * 0.1)));
+        }
+        input.addEventListener('input', update);
+        update();
+    }
+
+    const nameInput     = document.getElementById('nameInput');
+    const usernameInput = document.getElementById('usernameInput');
+    const bioInput      = document.getElementById('bioInput');
+
+    setupCounter(nameInput,     document.getElementById('nameCounter'),     50,  5);
+    setupCounter(usernameInput, document.getElementById('usernameCounter'), 15,  3);
+    setupCounter(bioInput,      document.getElementById('bioCounter'),      160, 20);
+
+
+    /* ══════════════════════════════════════════
+       4. USERNAME — sanitize & validate
+    ══════════════════════════════════════════ */
+    const usernameStatus = document.getElementById('usernameStatus');
+    const usernameError  = document.getElementById('usernameError');
+
+    usernameInput.addEventListener('input', () => {
+        // Strip disallowed chars (only letters, numbers, underscore)
+        usernameInput.value = usernameInput.value.replace(/[^A-Za-z0-9_]/g, '');
+
+        const val = usernameInput.value.trim();
+        usernameError.classList.remove('show');
+        usernameInput.classList.remove('has-error');
+
+        if (val.length === 0) {
+            usernameStatus.textContent = '';
+            usernameStatus.className = 'username-status neutral';
+        } else if (val.length < 3) {
+            usernameStatus.textContent = 'Too short — minimum 3 characters';
+            usernameStatus.className = 'username-status error';
+        } else {
+            usernameStatus.textContent = `@${val}`;
+            usernameStatus.className = 'username-status ok';
+        }
+
+        validateForm();
+    });
+
+
+    /* ══════════════════════════════════════════
+       5. FORM VALIDATION — enable Next button
+    ══════════════════════════════════════════ */
+    const submitBtn  = document.getElementById('submitBtn');
+    const nameError  = document.getElementById('nameError');
+
+    function validateForm() {
+        const nameOk     = nameInput.value.trim().length > 0;
+        const usernameOk = usernameInput.value.trim().length >= 3;
+        const ready      = nameOk && usernameOk;
+        submitBtn.classList.toggle('ready', ready);
+        submitBtn.disabled = !ready;
+    }
+
+    nameInput.addEventListener('input', () => {
+        nameError.classList.remove('show');
+        nameInput.classList.remove('has-error');
+        validateForm();
+    });
+
+    validateForm();
+
+
+    /* ══════════════════════════════════════════
+       6. FORM SUBMIT — guard + loading state
+    ══════════════════════════════════════════ */
+    document.getElementById('profileForm').addEventListener('submit', function (e) {
+        const nameVal     = nameInput.value.trim();
+        const usernameVal = usernameInput.value.trim();
+        let valid = true;
+
+        // Name check
+        if (!nameVal) {
+            nameError.classList.add('show');
+            nameInput.classList.add('has-error');
+            valid = false;
+        }
+
+        // Username check
+        if (usernameVal.length < 3) {
+            usernameError.classList.add('show');
+            usernameInput.classList.add('has-error');
+            valid = false;
+        }
+
+        if (!valid || !submitBtn.classList.contains('ready')) {
+            e.preventDefault();
+            Swal.fire({
+                ...swalDefaults,
+                icon: 'warning',
+                title: 'Incomplete profile',
+                text: 'Please enter your name and a valid username (min 3 characters).',
+            });
+            return;
+        }
+
+        // All good — loading state
+        submitBtn.textContent = 'Saving…';
+        submitBtn.classList.remove('ready');
+        submitBtn.disabled = true;
+    });
+
+})();
+</script>
+
+</body>
+</html>

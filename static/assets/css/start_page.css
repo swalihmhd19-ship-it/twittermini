@@ -1,0 +1,387 @@
+/* ═══════════════════════════════════════════
+   START PAGE — TWITTER MINI
+   start_page.css
+═══════════════════════════════════════════ */
+
+/* ── Reset ── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ── Variables ── */
+:root {
+    --primary-bg:     #0a0a0a;
+    --accent-blue:    #1d9bf0;
+    --accent-purple:  #7856ff;
+    --text-white:     #ffffff;
+    --text-gray:      #71767b;
+    --button-hover:   #f7f9f9;
+    --button-bg:      #ffffff;
+}
+
+/* ── Base ── */
+body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--primary-bg);
+    color: var(--text-white);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* animated ambient gradient */
+body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(29, 155, 240, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(120, 86, 255, 0.15) 0%, transparent 50%);
+    animation: gradientShift 15s ease infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes gradientShift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33%       { transform: translate(5%, -5%) rotate(120deg); }
+    66%       { transform: translate(-5%, 5%) rotate(240deg); }
+}
+
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+
+.container {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 1200px;
+    width: 100%;
+    min-height: 100vh;
+    align-items: center;
+    padding: 2rem;
+    gap: 4rem;
+}
+
+
+/* ═══════════════════════════════════════════
+   LOGO SECTION
+═══════════════════════════════════════════ */
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInLeft 0.8s ease-out;
+}
+
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.logo {
+    width: 300px;
+    height: 300px;
+}
+
+.logo svg {
+    width: 100%;
+    height: 100%;
+    fill: var(--text-white);
+    filter: drop-shadow(0 0 40px rgba(29, 155, 240, 0.3));
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-20px); }
+}
+
+
+/* ═══════════════════════════════════════════
+   SIGN-UP SECTION
+═══════════════════════════════════════════ */
+
+.signup-section {
+    animation: fadeInRight 0.8s ease-out 0.2s both;
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 4rem;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--text-white) 0%, var(--accent-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    letter-spacing: -0.01em;
+}
+
+
+/* ═══════════════════════════════════════════
+   BUTTON GROUP
+═══════════════════════════════════════════ */
+
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+
+/* ═══════════════════════════════════════════
+   BUTTONS — BASE
+   Works for both <button> and <a> tags
+═══════════════════════════════════════════ */
+
+.btn {
+    display: flex;              /* flex on ALL .btn — covers <a> and <button> */
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+
+    border-radius: 9999px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    position: relative;
+    overflow: hidden;
+
+    /* critical for <a> tags — reset link styles */
+    text-decoration: none;
+    color: inherit;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* prevent <a> from showing visited/active link styles */
+.btn:visited,
+.btn:active,
+.btn:focus {
+    text-decoration: none;
+    color: inherit;
+    outline: none;
+}
+
+/* ripple hover effect */
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease, height 0.5s ease;
+    pointer-events: none;
+}
+.btn:hover::before {
+    width: 320px;
+    height: 320px;
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-text {
+    position: relative;
+    z-index: 1;
+}
+
+
+/* ── Google & Apple buttons ──
+   These are now: <a class="btn btn-google"> and <button class="btn btn-apple">
+   Both need explicit background + color                                        */
+.btn-google,
+.btn-apple {
+    background: var(--button-bg);   /* white */
+    color: var(--primary-bg);       /* near-black text */
+}
+
+.btn-google:hover,
+.btn-apple:hover {
+    background: var(--button-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.12);
+}
+
+/* extra specificity for <a> so browser default link color doesn't win */
+a.btn-google,
+a.btn-google:visited,
+a.btn-google:hover,
+a.btn-google:focus {
+    color: var(--primary-bg);
+}
+
+
+/* ── Divider ── */
+.divider {
+    text-align: center;
+    margin: 1.5rem 0;
+    color: var(--text-gray);
+    font-size: 0.875rem;
+    position: relative;
+}
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+.divider::before { left: 0; }
+.divider::after  { right: 0; }
+
+
+/* ── Create account button ── */
+.btn-create {
+    background: transparent;
+    color: var(--accent-blue);
+    border: 1px solid var(--accent-blue);
+    margin-bottom: 2rem;
+}
+.btn-create:hover {
+    background: rgba(29, 155, 240, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(29, 155, 240, 0.3);
+}
+
+
+/* ── Terms ── */
+.terms {
+    font-size: 0.75rem;
+    color: var(--text-gray);
+    margin-bottom: 2rem;
+    line-height: 1.4;
+}
+.terms a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.terms a:hover {
+    color: var(--accent-purple);
+    text-decoration: underline;
+}
+
+
+/* ── Sign-in section ── */
+.signin-section h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+/* Sign in is now <a class="btn btn-signin"> — needs explicit color */
+.btn-signin {
+    background: transparent;
+    color: var(--accent-blue);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+}
+.btn-signin:hover {
+    background: rgba(29, 155, 240, 0.1);
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+}
+
+/* ensure <a> link default color doesn't override */
+a.btn-signin,
+a.btn-signin:visited,
+a.btn-signin:hover,
+a.btn-signin:focus {
+    color: var(--accent-blue);
+}
+
+
+/* ── Grok button ── */
+.btn-grok {
+    background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+    color: var(--text-white);
+    border: none;
+    width: 100%;
+    margin-top: 1rem;
+}
+.btn-grok:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(120, 86, 255, 0.4);
+}
+
+.sparkle {
+    display: inline-block;
+    animation: sparkleAnim 1.5s ease-in-out infinite;
+}
+@keyframes sparkleAnim {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    50%       { transform: rotate(180deg) scale(1.2); }
+}
+
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+
+@media (max-width: 968px) {
+    .container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 1rem;
+    }
+    .logo-section { display: none; }
+    h1 { font-size: 3rem; }
+    h2 { font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 1.25rem; }
+    .btn {
+        font-size: 0.9rem;
+        padding: 0 1.25rem;  /* keep height from var, fix padding */
+    }
+}

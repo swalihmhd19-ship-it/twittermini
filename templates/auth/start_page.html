@@ -1,0 +1,669 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Mini - Join Today</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/start_page.css' %}">
+
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* ───────────────────────────────────────────────
+           TWITTER / X  –  MODAL  (drop-in replacement)
+        ─────────────────────────────────────────────── */
+
+        /* ── overlay ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(91, 112, 131, 0.40);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(0px);
+            animation: overlayIn .15s ease;
+        }
+        .modal-overlay.open { display: flex; }
+
+        @keyframes overlayIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        /* ── modal card ── */
+        .modal {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            padding: 12px 80px 40px;
+            box-sizing: border-box;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalIn .18s cubic-bezier(.4,0,.2,1);
+            scrollbar-width: thin;
+            scrollbar-color: #333 transparent;
+        }
+        .modal::-webkit-scrollbar { width: 6px; }
+        .modal::-webkit-scrollbar-track { background: transparent; }
+        .modal::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(.96) translateY(8px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* ── close ── */
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #e7e9ea;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: background .2s;
+            line-height: 1;
+        }
+        .modal-close:hover { background: rgba(231,233,234,.1); }
+
+        /* ── logo ── */
+        .modal-logo {
+            display: flex;
+            justify-content: center;
+            margin: 2px 0 20px;
+        }
+        .modal-logo svg {
+            width: 30px;
+            height: 30px;
+            fill: #e7e9ea;
+        }
+
+        /* ── title ── */
+        .modal h2#modalTitle {
+            font-family: 'Chirp', 'TwitterChirp', 'GraphikWide', 'Arial Black', sans-serif;
+            font-weight: 800;
+            font-size: 31px;
+            color: #e7e9ea;
+            margin: 0 0 28px;
+            letter-spacing: -.4px;
+            line-height: 1.2;
+        }
+
+        /* ────────────────────────────────────────────
+           FLOATING-LABEL FIELDS
+        ──────────────────────────────────────────── */
+        .modal-field {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .modal-field input {
+            width: 100%;
+            box-sizing: border-box;
+            height: 56px;
+            padding: 22px 48px 6px 12px;
+            background: #000;
+            border: 1px solid #333639;
+            border-radius: 4px;
+            color: #e7e9ea;
+            font-size: 17px;
+            font-family: inherit;
+            outline: none;
+            caret-color: #1d9bf0;
+            transition: border-color .2s;
+            -webkit-appearance: none;
+        }
+
+        .modal-field input:focus {
+            border-color: #1d9bf0;
+            border-width: 2px;
+        }
+
+        .modal-field label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #71767b;
+            font-size: 17px;
+            pointer-events: none;
+            transition: top .15s, font-size .15s, color .15s;
+        }
+
+        .modal-field input:focus   ~ label,
+        .modal-field input:not(:placeholder-shown) ~ label {
+            top: 10px;
+            font-size: 12px;
+            transform: none;
+            color: #71767b;
+        }
+
+        .modal-field input:focus ~ label { color: #1d9bf0; }
+
+        .modal-field .char-count {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            color: #71767b;
+            pointer-events: none;
+            transition: top .15s;
+        }
+
+        .modal-field input:focus   ~ .char-count,
+        .modal-field input:not(:placeholder-shown) ~ .char-count {
+            top: 14px;
+            transform: none;
+        }
+
+        /* ── error state ── */
+        .modal-field.error input { border-color: #f4212e; }
+        .modal-field .field-error {
+            display: none;
+            font-size: 13px;
+            color: #f4212e;
+            margin-top: 4px;
+            padding-left: 2px;
+        }
+        .modal-field.error .field-error { display: block; }
+
+        /* ────────────────────────────────────────────
+           DATE OF BIRTH BLOCK
+        ──────────────────────────────────────────── */
+        .dob-block {
+            margin-bottom: 24px;
+        }
+
+        .dob-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #e7e9ea;
+            margin: 0 0 4px;
+        }
+
+        .dob-subtitle {
+            font-size: 14px;
+            color: #71767b;
+            margin: 0 0 14px;
+            line-height: 1.4;
+        }
+        .dob-subtitle a { color: #1d9bf0; text-decoration: none; }
+        .dob-subtitle a:hover { text-decoration: underline; }
+
+        .dob-selects {
+            display: grid;
+            grid-template-columns: 1.8fr 1fr 1.3fr;
+            gap: 12px;
+        }
+
+        .dob-selects select {
+            width: 100%;
+            height: 56px;
+            padding: 0 36px 0 12px;
+            background: #000;
+            border: 1px solid #333639;
+            border-radius: 4px;
+            color: #e7e9ea;
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%2371767b'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            transition: border-color .2s;
+        }
+
+        .dob-selects select:focus { border-color: #1d9bf0; border-width: 2px; }
+        .dob-selects select option[value=""] { color: #71767b; }
+
+        /* ────────────────────────────────────────────
+           NEXT BUTTON
+        ──────────────────────────────────────────── */
+        .modal-next {
+            width: 100%;
+            height: 52px;
+            border-radius: 26px;
+            border: none;
+            background: #e7e9ea;
+            color: #0f1419;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: not-allowed;
+            opacity: .45;
+            transition: background .2s, opacity .2s, transform .1s;
+            margin-top: 12px;
+            letter-spacing: .1px;
+        }
+
+        .modal-next.ready {
+            opacity: 1;
+            cursor: pointer;
+            background: #e7e9ea;
+        }
+        .modal-next.ready:hover  { background: #d0d3d6; }
+        .modal-next.ready:active { transform: scale(.985); }
+
+        /* ────────────────────────────────────────────
+           RESPONSIVE
+        ──────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            .modal {
+                border-radius: 0;
+                max-height: 100vh;
+                min-height: 100vh;
+                padding: 12px 20px 32px;
+            }
+            .dob-selects {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+
+        /* ── SweetAlert2 dark theme overrides ── */
+        .swal2-popup {
+            background: #1e2732 !important;
+            color: #e7e9ea !important;
+            border-radius: 16px !important;
+        }
+        .swal2-title { color: #e7e9ea !important; }
+        .swal2-html-container { color: #8b98a5 !important; }
+        .swal2-confirm {
+            background: #1d9bf0 !important;
+            border-radius: 20px !important;
+            font-weight: 700 !important;
+        }
+        .swal2-confirm:focus { box-shadow: none !important; }
+        .swal2-icon.swal2-error { border-color: #f4212e !important; color: #f4212e !important; }
+        .swal2-icon.swal2-warning { border-color: #ffd400 !important; color: #ffd400 !important; }
+        .swal2-icon.swal2-success { border-color: #00ba7c !important; color: #00ba7c !important; }
+        .swal2-icon.swal2-success [class^=swal2-success-line] { background: #00ba7c !important; }
+        .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(0,186,124,.3) !important; }
+    </style>
+</head>
+<body>
+
+    <!-- ── Hidden Django messages for SweetAlert ── -->
+    <!-- Django messages are serialized to a JSON script tag so JS can read them safely -->
+    {% if messages %}
+    <script id="django-messages" type="application/json">
+    [
+        {% for message in messages %}
+        {
+            "level": "{{ message.tags }}",
+            "text": "{{ message|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
+    {% endif %}
+
+    <div class="container">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="logo">
+                <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Sign Up Section -->
+        <div class="signup-section">
+            <h1>Happening now</h1>
+            <h2>Join today.</h2>
+
+            <div class="button-group">
+                <!-- FIX: Removed invalid nested <button><a> structure. Use only <a> styled as button. -->
+                <a href="{% provider_login_url 'google' process='signup' %}" class="btn btn-google">
+                    <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span class="btn-text">Sign up with Google</span>
+                </a>
+
+                <!-- Apple sign-up: no Django allauth provider by default, shown as UI only -->
+                <button class="btn btn-apple" type="button">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                    </svg>
+                    <span class="btn-text">Sign up with Apple</span>
+                </button>
+            </div>
+
+            <div class="divider">OR</div>
+
+            <button class="btn btn-create" id="openModalBtn" type="button">
+                <span class="btn-text">Create account</span>
+            </button>
+
+            <p class="terms">
+                By signing up, you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>, including <a href="#">Cookie Use</a>.
+            </p>
+
+            <div class="signin-section">
+                <h3>Already have an account?</h3>
+                <a href="{% url 'login_view' %}" class="btn btn-signin">
+                    <span class="btn-text">Sign in</span>
+                </a>
+
+                <button class="btn btn-grok" type="button">
+                    <span class="sparkle">✨</span>
+                    <span class="btn-text">Get Grok</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MODAL
+    ══════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+            <!-- close -->
+            <button class="modal-close" id="closeModalBtn" aria-label="Close" type="button">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M10.59 12L4.54 5.96l1.42-1.42L12 10.59l6.04-6.05 1.42 1.42L13.41 12l6.05 6.04-1.42 1.42L12 13.41l-6.04 6.05-1.42-1.42L10.59 12z"/>
+                </svg>
+            </button>
+
+            <!-- logo -->
+            <div class="modal-logo">
+                <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"/>
+                </svg>
+            </div>
+
+            <h2 id="modalTitle">Create your account</h2>
+
+            <!-- ── FORM ── -->
+            <form method="POST" action="{% url 'send_otp' %}" id="registerForm" novalidate>
+                {% csrf_token %}
+
+                <!-- Name -->
+                <div class="modal-field" id="nameField">
+                    <input type="text"
+                           name="name"
+                           id="nameInput"
+                           placeholder=" "
+                           maxlength="50"
+                           autocomplete="name">
+                    <label for="nameInput">Name</label>
+                    <span class="char-count" id="nameCounter">0 / 50</span>
+                    <span class="field-error">Please enter your name.</span>
+                </div>
+
+                <!-- Email -->
+                <div class="modal-field" id="emailField">
+                    <input type="email"
+                           name="email"
+                           id="emailInput"
+                           placeholder=" "
+                           autocomplete="email">
+                    <label for="emailInput">Email</label>
+                    <span class="field-error">Please enter a valid email address.</span>
+                </div>
+
+                <!-- Date of Birth -->
+                <div class="dob-block">
+                    <p class="dob-title">Date of birth</p>
+                    <p class="dob-subtitle">
+                        This will not be shown publicly. Confirm your own age, even if this account is for a business, a pet, or something else.
+                    </p>
+
+                    <div class="dob-selects">
+                        <!-- Month -->
+                        <select name="month" id="monthSelect">
+                            <option value="">Month</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+
+                        <!-- Day -->
+                        <select name="day" id="daySelect">
+                            <option value="">Day</option>
+                        </select>
+
+                        <!-- Year -->
+                        <select name="year" id="yearSelect">
+                            <option value="">Year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit"
+                        class="modal-next"
+                        id="nextBtn"
+                        disabled>
+                    Next
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <script>
+        /* ══════════════════════════════════════════
+           SWEETALERT2 — Fire Django messages on load
+        ══════════════════════════════════════════ */
+        (function () {
+            const el = document.getElementById('django-messages');
+            if (!el) return;
+
+            let msgs;
+            try { msgs = JSON.parse(el.textContent); } catch (e) { return; }
+            if (!msgs || !msgs.length) return;
+
+            // Map Django message tags → SweetAlert icon
+            function toIcon(tags) {
+                if (!tags) return 'info';
+                if (tags.includes('error'))   return 'error';
+                if (tags.includes('warning')) return 'warning';
+                if (tags.includes('success')) return 'success';
+                return 'info';
+            }
+
+            // Fire them sequentially (queue)
+            function fireNext(index) {
+                if (index >= msgs.length) return;
+                const m = msgs[index];
+                Swal.fire({
+                    icon: toIcon(m.level),
+                    title: m.text,
+                    confirmButtonText: 'OK',
+                    background: '#1e2732',
+                    color: '#e7e9ea',
+                    confirmButtonColor: '#1d9bf0',
+                    customClass: { popup: 'swal2-popup' }
+                }).then(() => fireNext(index + 1));
+            }
+
+            fireNext(0);
+        })();
+
+
+        /* ══════════════════════════════════════════
+           MODAL OPEN / CLOSE
+        ══════════════════════════════════════════ */
+        const overlay  = document.getElementById('modalOverlay');
+        const openBtn  = document.getElementById('openModalBtn');
+        const closeBtn = document.getElementById('closeModalBtn');
+
+        openBtn .addEventListener('click', () => overlay.classList.add('open'));
+        closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+        overlay .addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') overlay.classList.remove('open'); });
+
+
+        /* ══════════════════════════════════════════
+           NAME CHARACTER COUNTER
+        ══════════════════════════════════════════ */
+        const nameInput   = document.getElementById('nameInput');
+        const nameCounter = document.getElementById('nameCounter');
+
+        nameInput.addEventListener('input', () => {
+            const len = nameInput.value.length;
+            nameCounter.textContent = `${len} / 50`;
+            nameCounter.style.color = len >= 45 ? '#f4212e' : '#71767b';
+        });
+
+
+        /* ══════════════════════════════════════════
+           POPULATE DAY & YEAR SELECTS
+        ══════════════════════════════════════════ */
+        const daySelect  = document.getElementById('daySelect');
+        const yearSelect = document.getElementById('yearSelect');
+
+        for (let d = 1; d <= 31; d++) {
+            const o = document.createElement('option');
+            o.value = d;
+            o.textContent = d;
+            daySelect.appendChild(o);
+        }
+
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear; y >= 1900; y--) {
+            const o = document.createElement('option');
+            o.value = y;
+            o.textContent = y;
+            yearSelect.appendChild(o);
+        }
+
+
+        /* ══════════════════════════════════════════
+           FORM VALIDATION — enable Next button
+        ══════════════════════════════════════════ */
+        const emailInput  = document.getElementById('emailInput');
+        const monthSelect = document.getElementById('monthSelect');
+        const nextBtn     = document.getElementById('nextBtn');
+
+        function isValidEmail(v) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        }
+
+        function checkForm() {
+            const nameVal  = nameInput.value.trim();
+            const emailVal = emailInput.value.trim();
+            const valid    =
+                nameVal.length > 0 &&
+                isValidEmail(emailVal) &&
+                monthSelect.value &&
+                daySelect.value &&
+                yearSelect.value;
+
+            // Toggle visual class AND the native disabled attribute together
+            nextBtn.classList.toggle('ready', valid);
+            nextBtn.disabled = !valid;
+
+            // Inline field-level error hints
+            document.getElementById('nameField').classList.toggle('error', nameVal.length === 0 && nameInput.dataset.touched);
+            document.getElementById('emailField').classList.toggle('error', emailVal.length > 0 && !isValidEmail(emailVal));
+        }
+
+        // Mark field as "touched" on blur so we only show error after interaction
+        nameInput.addEventListener('blur', () => { nameInput.dataset.touched = '1'; checkForm(); });
+
+        [nameInput, emailInput, monthSelect, daySelect, yearSelect]
+            .forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', checkForm));
+
+
+        /* ══════════════════════════════════════════
+           FORM SUBMIT — client-side SweetAlert guard
+           (server-side is the real authority)
+        ══════════════════════════════════════════ */
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
+            // Extra guard: if somehow submitted while disabled, block and warn
+            if (nextBtn.disabled) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Incomplete form',
+                    text: 'Please fill in all fields before continuing.',
+                    confirmButtonText: 'OK',
+                    background: '#1e2732',
+                    color: '#e7e9ea',
+                    confirmButtonColor: '#1d9bf0'
+                });
+                return;
+            }
+
+            // Age check on the client (13–120 yrs) — purely UX, server validates too
+            const month = parseInt(monthSelect.value);
+            const day   = parseInt(daySelect.value);
+            const year  = parseInt(yearSelect.value);
+
+            if (month && day && year) {
+                const dob   = new Date(year, month - 1, day);
+                const today = new Date();
+
+                // Age in years (approximate)
+                let age = today.getFullYear() - dob.getFullYear();
+                const m = today.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+                if (dob > today) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'error', title: 'Invalid date', text: 'Date of birth cannot be in the future.', background: '#1e2732', color: '#e7e9ea', confirmButtonColor: '#1d9bf0' });
+                    return;
+                }
+
+                if (age < 13) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'error', title: 'Age restriction', text: 'You must be at least 13 years old to create an account.', background: '#1e2732', color: '#e7e9ea', confirmButtonColor: '#1d9bf0' });
+                    return;
+                }
+
+                if (age > 120) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'error', title: 'Invalid date of birth', text: 'Please enter a valid date of birth.', background: '#1e2732', color: '#e7e9ea', confirmButtonColor: '#1d9bf0' });
+                    return;
+                }
+            }
+
+            // Show a loading state while form submits
+            nextBtn.textContent = 'Sending OTP…';
+            nextBtn.classList.remove('ready');
+            nextBtn.disabled = true;
+        });
+    </script>
+
+    <script src="{% static 'assets/js/start_page.js' %}"></script>
+</body>
+</html>

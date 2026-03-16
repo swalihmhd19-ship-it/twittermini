@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Mini – Verify your email</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/start_page.css' %}">
+
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* ─────────────────────────────────────────────
+           BASE
+        ───────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Sans', sans-serif;
+            color: #e7e9ea;
+        }
+
+        /* ── card ── */
+        .otp-card {
+            background: #000;
+            border: 1px solid #2f3336;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 440px;
+            padding: 32px 40px 36px;
+            animation: cardIn .2s cubic-bezier(.4,0,.2,1);
+            position: relative;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(12px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── logo ── */
+        .otp-logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .otp-logo svg {
+            width: 28px;
+            height: 28px;
+            fill: #e7e9ea;
+        }
+
+        /* ── headings ── */
+        .otp-card h1 {
+            font-family: 'Archivo Black', 'Arial Black', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -.4px;
+            color: #e7e9ea;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .otp-subtitle {
+            font-size: 15px;
+            color: #71767b;
+            line-height: 1.5;
+            margin-bottom: 28px;
+        }
+
+        .otp-subtitle strong {
+            color: #e7e9ea;
+            font-weight: 600;
+        }
+
+        /* ─────────────────────────────────────────────
+           OTP INPUT ROW
+        ───────────────────────────────────────────── */
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+
+        .otp-box {
+            width: 52px;
+            height: 60px;
+            background: #000;
+            border: 2px solid #333639;
+            border-radius: 8px;
+            color: #e7e9ea;
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Archivo Black', monospace;
+            text-align: center;
+            caret-color: #1d9bf0;
+            outline: none;
+            transition: border-color .18s, transform .12s;
+            -webkit-appearance: none;
+        }
+
+        .otp-box:focus {
+            border-color: #1d9bf0;
+            transform: scale(1.04);
+        }
+
+        .otp-box.filled {
+            border-color: #1d9bf0;
+        }
+
+        .otp-box.shake {
+            animation: shake .35s ease;
+        }
+
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%      { transform: translateX(-5px); }
+            40%      { transform: translateX(5px); }
+            60%      { transform: translateX(-4px); }
+            80%      { transform: translateX(4px); }
+        }
+
+        #otpHidden { display: none; }
+
+        /* ─────────────────────────────────────────────
+           VERIFY BUTTON
+        ───────────────────────────────────────────── */
+        .btn-verify {
+            width: 100%;
+            height: 52px;
+            border-radius: 26px;
+            border: none;
+            background: #e7e9ea;
+            color: #0f1419;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: not-allowed;
+            opacity: .38;
+            transition: background .2s, opacity .18s, transform .1s;
+            margin-top: 8px;
+            letter-spacing: .1px;
+        }
+
+        .btn-verify.ready {
+            opacity: 1;
+            cursor: pointer;
+        }
+        .btn-verify.ready:hover  { background: #d0d3d6; }
+        .btn-verify.ready:active { transform: scale(.985); }
+
+        .btn-verify.loading {
+            opacity: .7;
+            cursor: wait;
+            position: relative;
+        }
+        .btn-verify.loading::after {
+            content: '';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(15,20,25,.3);
+            border-top-color: #0f1419;
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+        }
+        @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+        /* ─────────────────────────────────────────────
+           RESEND SECTION
+        ───────────────────────────────────────────── */
+        .resend-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .resend-text {
+            font-size: 14px;
+            color: #71767b;
+            margin-bottom: 2px;
+        }
+
+        .timer-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(29,155,240,.08);
+            border: 1px solid rgba(29,155,240,.2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1d9bf0;
+            margin-top: 10px;
+            transition: opacity .3s;
+        }
+
+        .ring-wrap {
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+        .ring-bg   { stroke: rgba(29,155,240,.2); fill: none; stroke-width: 2.5; }
+        .ring-fill {
+            fill: none;
+            stroke: #1d9bf0;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            transform-origin: center;
+            transform: rotate(-90deg);
+            transition: stroke-dashoffset .9s linear;
+        }
+
+        .btn-resend {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid #333639;
+            border-radius: 20px;
+            padding: 8px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e7e9ea;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background .2s, border-color .2s;
+            font-family: inherit;
+        }
+        .btn-resend:hover {
+            background: rgba(231,233,234,.08);
+            border-color: #71767b;
+        }
+        .btn-resend:active { transform: scale(.97); }
+
+        /* ─────────────────────────────────────────────
+           BACK LINK
+        ───────────────────────────────────────────── */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #71767b;
+            font-size: 14px;
+            text-decoration: none;
+            margin-top: 24px;
+            transition: color .15s;
+        }
+        .back-link:hover { color: #e7e9ea; }
+
+        /* ─────────────────────────────────────────────
+           RESPONSIVE
+        ───────────────────────────────────────────── */
+        @media (max-width: 500px) {
+            .otp-card {
+                border: none;
+                border-radius: 0;
+                padding: 32px 24px 40px;
+                min-height: 100vh;
+                align-items: flex-start;
+            }
+            .otp-box {
+                width: 44px;
+                height: 54px;
+                font-size: 20px;
+            }
+        }
+
+        /* ── SweetAlert2 dark theme overrides ── */
+        .swal2-popup {
+            background: #1e2732 !important;
+            color: #e7e9ea !important;
+            border-radius: 16px !important;
+        }
+        .swal2-title { color: #e7e9ea !important; }
+        .swal2-html-container { color: #8b98a5 !important; }
+        .swal2-confirm {
+            background: #1d9bf0 !important;
+            border-radius: 20px !important;
+            font-weight: 700 !important;
+        }
+        .swal2-confirm:focus { box-shadow: none !important; }
+        .swal2-icon.swal2-error { border-color: #f4212e !important; color: #f4212e !important; }
+        .swal2-icon.swal2-warning { border-color: #ffd400 !important; color: #ffd400 !important; }
+        .swal2-icon.swal2-success { border-color: #00ba7c !important; color: #00ba7c !important; }
+        .swal2-icon.swal2-success [class^=swal2-success-line] { background: #00ba7c !important; }
+        .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(0,186,124,.3) !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Django messages for SweetAlert -->
+    {% if messages %}
+    <script id="django-messages" type="application/json">
+    [
+        {% for message in messages %}
+        {
+            "level": "{{ message.tags }}",
+            "text": "{{ message|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
+    {% endif %}
+
+    <!-- Track whether we had an OTP error so JS can shake the boxes -->
+    {% for message in messages %}
+        {% if 'error' in message.tags %}
+        <script>window.__otpError = true;</script>
+        {% endif %}
+    {% endfor %}
+
+<div class="otp-card">
+
+    <!-- Logo -->
+    <div class="otp-logo">
+        <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+            <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"/>
+        </svg>
+    </div>
+
+    <!-- Title -->
+    <h1>We sent you a code</h1>
+    <p class="otp-subtitle">
+        Enter the 6-digit code we sent to
+        {% if request.session.reg_email %}
+            <strong>{{ request.session.reg_email }}</strong>
+        {% else %}
+            your email address
+        {% endif %}
+        to continue.
+    </p>
+
+    <!-- OTP Form -->
+    <form method="POST" action="{% url 'verify_otp' %}" id="otpForm" novalidate>
+        {% csrf_token %}
+
+        <!-- 6 visual boxes -->
+        <div class="otp-inputs" id="otpInputs">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" autocomplete="one-time-code" aria-label="Digit 1">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 2">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 3">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 4">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 5">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" aria-label="Digit 6">
+        </div>
+
+        <!-- Hidden real input sent to Django -->
+        <input type="hidden" name="otp" id="otpHidden">
+
+        <button type="submit" class="btn-verify" id="verifyBtn" disabled>
+            Verify
+        </button>
+    </form>
+
+    <!-- Resend Section -->
+    <div class="resend-section">
+        <p class="resend-text">Didn't receive the email?</p>
+
+        <!-- Timer pill (visible while cooldown active) -->
+        <div class="timer-pill" id="timerPill" style="display:none;">
+            <div class="ring-wrap">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <circle class="ring-bg" cx="10" cy="10" r="8"/>
+                    <circle class="ring-fill" id="ringFill" cx="10" cy="10" r="8"
+                            stroke-dasharray="50.27"
+                            stroke-dashoffset="0"/>
+                </svg>
+            </div>
+            <span>Resend in <strong id="timerCount">{{ remaining_time }}</strong>s</span>
+        </div>
+
+        <!-- Resend form (hidden until timer expires) -->
+        <form method="POST" action="{% url 'resend_otp' %}" id="resendForm" style="display:none;" novalidate>
+            {% csrf_token %}
+            <button type="submit" class="btn-resend" id="resendBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+                Resend code
+            </button>
+        </form>
+    </div>
+
+    <!-- Back -->
+    <a href="{% url 'start_page' %}" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        Back
+    </a>
+
+</div>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<script>
+(function () {
+
+    /* ══════════════════════════════════════════
+       1. SWEETALERT2 — Fire Django messages
+    ══════════════════════════════════════════ */
+    const msgEl = document.getElementById('django-messages');
+
+    function toIcon(tags) {
+        if (!tags) return 'info';
+        if (tags.includes('error'))   return 'error';
+        if (tags.includes('warning')) return 'warning';
+        if (tags.includes('success')) return 'success';
+        return 'info';
+    }
+
+    const swalDefaults = {
+        background: '#1e2732',
+        color: '#e7e9ea',
+        confirmButtonColor: '#1d9bf0',
+        confirmButtonText: 'OK',
+        customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+    };
+
+    function fireMessages(msgs, index) {
+        if (!msgs || index >= msgs.length) return;
+        const m = msgs[index];
+        Swal.fire({
+            ...swalDefaults,
+            icon: toIcon(m.level),
+            title: m.text,
+        }).then(() => fireMessages(msgs, index + 1));
+    }
+
+    if (msgEl) {
+        let msgs;
+        try { msgs = JSON.parse(msgEl.textContent); } catch (e) { msgs = []; }
+        fireMessages(msgs, 0);
+    }
+
+
+    /* ══════════════════════════════════════════
+       2. OTP BOX — keyboard navigation & paste
+    ══════════════════════════════════════════ */
+    const boxes       = Array.from(document.querySelectorAll('.otp-box'));
+    const hiddenInput = document.getElementById('otpHidden');
+    const verifyBtn   = document.getElementById('verifyBtn');
+    const otpForm     = document.getElementById('otpForm');
+
+    function syncHidden() {
+        const val = boxes.map(b => b.value).join('');
+        hiddenInput.value = val;
+
+        const complete = val.length === 6 && /^\d{6}$/.test(val);
+        verifyBtn.disabled = !complete;
+        verifyBtn.classList.toggle('ready', complete);
+        boxes.forEach(b => b.classList.toggle('filled', b.value !== ''));
+    }
+
+    boxes.forEach((box, i) => {
+        box.addEventListener('keydown', e => {
+            if (e.key === 'Backspace') {
+                if (!box.value && i > 0) {
+                    boxes[i - 1].value = '';
+                    boxes[i - 1].focus();
+                }
+                syncHidden();
+            }
+            if (e.key === 'ArrowLeft'  && i > 0) boxes[i - 1].focus();
+            if (e.key === 'ArrowRight' && i < 5) boxes[i + 1].focus();
+        });
+
+        box.addEventListener('input', () => {
+            box.value = box.value.replace(/\D/g, '').slice(-1);
+            if (box.value && i < 5) boxes[i + 1].focus();
+            syncHidden();
+        });
+
+        box.addEventListener('paste', e => {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData)
+                            .getData('text').replace(/\D/g, '').slice(0, 6);
+            pasted.split('').forEach((ch, idx) => {
+                if (boxes[idx]) boxes[idx].value = ch;
+            });
+            const nextEmpty = boxes.findIndex(b => !b.value);
+            (boxes[nextEmpty] || boxes[5]).focus();
+            syncHidden();
+        });
+    });
+
+    /* Auto-focus first box */
+    boxes[0].focus();
+
+    /* Shake + clear boxes on OTP error (set by inline script above) */
+    if (window.__otpError) {
+        boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+        syncHidden();
+        boxes.forEach(b => {
+            b.classList.add('shake');
+            b.addEventListener('animationend', () => b.classList.remove('shake'), { once: true });
+        });
+        boxes[0].focus();
+    }
+
+    /* Loading state on submit */
+    otpForm.addEventListener('submit', function () {
+        if (verifyBtn.classList.contains('ready')) {
+            verifyBtn.classList.add('loading');
+            verifyBtn.disabled  = true;
+            verifyBtn.textContent = 'Verifying…';
+        }
+    });
+
+
+    /* ══════════════════════════════════════════
+       3. RESEND COUNTDOWN TIMER
+    ══════════════════════════════════════════ */
+    const TOTAL         = parseInt('{{ remaining_time|default:0 }}', 10);
+    const timerPill     = document.getElementById('timerPill');
+    const timerCount    = document.getElementById('timerCount');
+    const resendForm    = document.getElementById('resendForm');
+    const ringFill      = document.getElementById('ringFill');
+    const CIRCUMFERENCE = 50.27;  // 2π × r (r=8)
+
+    function setRing(secondsLeft) {
+        const fraction = secondsLeft / 30;  // 30-sec total cooldown (OTP_RESEND_TIMEOUT)
+        ringFill.style.strokeDashoffset = CIRCUMFERENCE * (1 - fraction);
+    }
+
+    if (TOTAL > 0) {
+        timerPill.style.display  = 'inline-flex';
+        resendForm.style.display = 'none';
+        setRing(TOTAL);
+
+        let remaining = TOTAL;
+        const interval = setInterval(() => {
+            remaining--;
+            timerCount.textContent = remaining;
+            setRing(remaining);
+
+            if (remaining <= 0) {
+                clearInterval(interval);
+                timerPill.style.opacity = '0';
+                setTimeout(() => {
+                    timerPill.style.display  = 'none';
+                    resendForm.style.display = 'block';
+                    resendForm.style.opacity = '0';
+                    requestAnimationFrame(() => {
+                        resendForm.style.transition = 'opacity .3s';
+                        resendForm.style.opacity    = '1';
+                    });
+                }, 300);
+            }
+        }, 1000);
+    } else {
+        /* No cooldown — show resend button immediately */
+        timerPill.style.display  = 'none';
+        resendForm.style.display = 'block';
+    }
+
+
+    /* ══════════════════════════════════════════
+       4. RESEND — loading state on click
+    ══════════════════════════════════════════ */
+    document.getElementById('resendForm').addEventListener('submit', function () {
+        const btn = document.getElementById('resendBtn');
+        btn.disabled     = true;
+        btn.textContent  = 'Sending…';
+        btn.style.opacity = '0.6';
+        btn.style.cursor  = 'wait';
+    });
+
+})();
+</script>
+
+</body>
+</html>
+</body>
+</html>

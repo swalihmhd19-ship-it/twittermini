@@ -1,0 +1,528 @@
+{% load static %}
+{%load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in to Twitter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:          #000000;
+            --bg-body:     #0a0a0a;
+            --accent-blue: #1d9bf0;
+            --text-white:  #e7e9ea;
+            --text-gray:   #71767b;
+            --border:      #2f3336;
+            --danger:      #f4212e;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(29,155,240,0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(120,86,255,0.12) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes gradientShift {
+            0%,100% { transform: rotate(0deg) scale(1); }
+            33%      { transform: rotate(120deg) scale(1.05); }
+            66%      { transform: rotate(240deg) scale(0.97); }
+        }
+
+        /* ── Card ── */
+        .card {
+            position: relative;
+            z-index: 1;
+            background: var(--bg);
+            width: 100%;
+            max-width: 600px;
+            padding: 20px 80px 48px;
+            border-radius: 16px;
+            animation: cardIn .2s cubic-bezier(.4,0,.2,1) both;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(10px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── Logo ── */
+        .logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .logo svg { width: 30px; height: 30px; fill: var(--text-white); }
+
+        /* ── Heading ── */
+        h1 {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-white);
+            margin-bottom: 28px;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+
+        /* ── Google button ── */
+        .btn-google {
+            width: 100%;
+            height: 44px;
+            padding: 0 20px;
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            background: transparent;
+            color: var(--text-white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background .2s, border-color .2s;
+            text-decoration: none;
+            margin-bottom: 4px;
+        }
+        .btn-google:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: #555;
+        }
+
+        /* ── Divider ── */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 20px 0;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .divider span {
+            color: var(--text-gray);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ── Floating-label inputs ── */
+        .field {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .field .input-wrap {
+            position: relative;
+        }
+        .field input {
+            width: 100%;
+            height: 56px;
+            padding: 22px 48px 6px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-white);
+            font-size: 17px;
+            font-family: inherit;
+            outline: none;
+            caret-color: var(--accent-blue);
+            transition: border-color .2s;
+            -webkit-appearance: none;
+            display: block;
+            box-sizing: border-box;
+        }
+        .field input:focus {
+            border-color: var(--accent-blue);
+            border-width: 2px;
+            padding: 23px 49px 5px 11px;
+        }
+        .field input.has-error { border-color: var(--danger) !important; }
+
+        /* floating label */
+        .field label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-gray);
+            font-size: 17px;
+            pointer-events: none;
+            transition: top .15s, font-size .15s, color .15s, transform .15s;
+            line-height: 1;
+        }
+        .field input:focus + label,
+        .field input:not(:placeholder-shown) + label {
+            top: 10px;
+            font-size: 12px;
+            transform: none;
+            color: var(--text-gray);
+        }
+        .field input:focus + label { color: var(--accent-blue); }
+
+        /* show/hide toggle */
+        .toggle-pw {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            transition: color .2s;
+        }
+        .toggle-pw:hover { color: var(--text-white); }
+
+        /* inline field error */
+        .field-error {
+            display: none;
+            font-size: 13px;
+            color: var(--danger);
+            margin-top: 5px;
+            padding-left: 2px;
+        }
+        .field-error.show { display: block; }
+
+        /* ── Sign in button ── */
+        .btn-signin {
+            width: 100%;
+            height: 52px;
+            border-radius: 9999px;
+            border: none;
+            background: var(--text-white);
+            color: #0f1419;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            transition: background .2s, transform .1s;
+            letter-spacing: 0.1px;
+        }
+        .btn-signin:hover  { background: #d0d3d6; }
+        .btn-signin:active { transform: scale(.985); }
+
+        /* loading state */
+        .btn-signin.loading {
+            opacity: .7;
+            cursor: wait;
+            position: relative;
+        }
+        .btn-signin.loading::after {
+            content: '';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(15,20,25,.3);
+            border-top-color: #0f1419;
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+        }
+        @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+        /* ── Forgot password ── */
+        .btn-forgot {
+            width: 100%;
+            height: 48px;
+            border-radius: 9999px;
+            border: 1px solid #4a5059;
+            background: transparent;
+            color: var(--text-white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 36px;
+            transition: background .2s, border-color .2s;
+        }
+        .btn-forgot:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: #71767b;
+        }
+
+        /* ── Sign up prompt ── */
+        .signup-prompt {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+        .signup-link {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .signup-link:hover { text-decoration: underline; }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .card { border-radius: 0; min-height: 100vh; padding: 20px 24px 40px; }
+        }
+
+        /* ── SweetAlert2 dark theme overrides ── */
+        .swal2-popup {
+            background: #1e2732 !important;
+            color: #e7e9ea !important;
+            border-radius: 16px !important;
+        }
+        .swal2-title { color: #e7e9ea !important; }
+        .swal2-html-container { color: #8b98a5 !important; }
+        .swal2-confirm {
+            background: #1d9bf0 !important;
+            border-radius: 20px !important;
+            font-weight: 700 !important;
+        }
+        .swal2-confirm:focus { box-shadow: none !important; }
+        .swal2-icon.swal2-error { border-color: #f4212e !important; color: #f4212e !important; }
+        .swal2-icon.swal2-warning { border-color: #ffd400 !important; color: #ffd400 !important; }
+        .swal2-icon.swal2-success { border-color: #00ba7c !important; color: #00ba7c !important; }
+        .swal2-icon.swal2-success [class^=swal2-success-line] { background: #00ba7c !important; }
+        .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(0,186,124,.3) !important; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Django messages for SweetAlert -->
+    {% if messages %}
+    <script id="django-messages" type="application/json">
+    [
+        {% for message in messages %}
+        {
+            "level": "{{ message.tags }}",
+            "text": "{{ message|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
+    {% endif %}
+
+<div class="card">
+
+    <!-- Logo -->
+    <div class="logo">
+        <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+            <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"/>
+        </svg>
+    </div>
+
+    <h1>Sign in to Twitter</h1>
+
+    <!-- Google sign-in — <a> only, no wrapping <button> -->
+    <a href="{% provider_login_url 'google' process='login' %}" class="btn-google">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Sign in with Google
+    </a>
+
+    <div class="divider"><span>or</span></div>
+
+    <!-- Login form -->
+    <form method="POST" action="{% url 'login_view' %}" novalidate id="loginForm">
+        {% csrf_token %}
+
+        <!-- Identifier -->
+        <div class="field">
+            <div class="input-wrap">
+                <input type="text"
+                       name="identifier"
+                       id="identifierInput"
+                       placeholder=" "
+                       autocomplete="username">
+                <label for="identifierInput">Phone, email, or username</label>
+            </div>
+            <span class="field-error" id="identifierError">Please enter your phone, email, or username.</span>
+        </div>
+
+        <!-- Password -->
+        <div class="field">
+            <div class="input-wrap">
+                <input type="password"
+                       name="password"
+                       id="passwordInput"
+                       placeholder=" "
+                       autocomplete="current-password">
+                <label for="passwordInput">Password</label>
+                <button type="button" class="toggle-pw" id="togglePw" aria-label="Show/hide password">
+                    <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+            <span class="field-error" id="passwordError">Please enter your password.</span>
+        </div>
+
+        <button type="submit" class="btn-signin" id="signinBtn">Sign in</button>
+
+    </form>
+
+    <button class="btn-forgot" type="button" >Forgot password?</button>
+
+    <div class="signup-prompt">
+        Don't have an account?
+        <a href="{% url 'start_page' %}" class="signup-link">Sign up</a>
+    </div>
+
+</div>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<script>
+(function () {
+
+    /* ══════════════════════════════════════════
+       1. SWEETALERT2 — Fire Django messages
+    ══════════════════════════════════════════ */
+    const msgEl = document.getElementById('django-messages');
+
+    function toIcon(tags) {
+        if (!tags) return 'info';
+        if (tags.includes('error'))   return 'error';
+        if (tags.includes('warning')) return 'warning';
+        if (tags.includes('success')) return 'success';
+        return 'info';
+    }
+
+    const swalDefaults = {
+        background: '#1e2732',
+        color: '#e7e9ea',
+        confirmButtonColor: '#1d9bf0',
+        confirmButtonText: 'OK',
+        customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }
+    };
+
+    function fireMessages(msgs, index) {
+        if (!msgs || index >= msgs.length) return;
+        const m = msgs[index];
+        Swal.fire({
+            ...swalDefaults,
+            icon: toIcon(m.level),
+            title: m.text,
+        }).then(() => fireMessages(msgs, index + 1));
+    }
+
+    if (msgEl) {
+        let msgs;
+        try { msgs = JSON.parse(msgEl.textContent); } catch (e) { msgs = []; }
+        fireMessages(msgs, 0);
+    }
+
+
+    /* ══════════════════════════════════════════
+       2. EYE TOGGLE
+    ══════════════════════════════════════════ */
+    const EYE_OPEN = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    const EYE_SHUT = `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+    const pwInput = document.getElementById('passwordInput');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    document.getElementById('togglePw').addEventListener('click', () => {
+        const isText = pwInput.type === 'text';
+        pwInput.type = isText ? 'password' : 'text';
+        eyeIcon.innerHTML = isText ? EYE_OPEN : EYE_SHUT;
+    });
+
+
+    /* ══════════════════════════════════════════
+       3. CLIENT-SIDE VALIDATION
+    ══════════════════════════════════════════ */
+    const idInput     = document.getElementById('identifierInput');
+    const idError     = document.getElementById('identifierError');
+    const pwError     = document.getElementById('passwordError');
+    const signinBtn   = document.getElementById('signinBtn');
+    const loginForm   = document.getElementById('loginForm');
+
+    // Clear errors on input
+    idInput.addEventListener('input', () => {
+        idError.classList.remove('show');
+        idInput.classList.remove('has-error');
+    });
+    pwInput.addEventListener('input', () => {
+        pwError.classList.remove('show');
+        pwInput.classList.remove('has-error');
+    });
+
+    loginForm.addEventListener('submit', function (e) {
+        const idVal = idInput.value.trim();
+        const pwVal = pwInput.value.trim();
+        let valid = true;
+
+        // Reset inline errors
+        idError.classList.remove('show'); idInput.classList.remove('has-error');
+        pwError.classList.remove('show'); pwInput.classList.remove('has-error');
+
+        if (!idVal) {
+            idError.classList.add('show');
+            idInput.classList.add('has-error');
+            valid = false;
+        }
+        if (!pwVal) {
+            pwError.classList.add('show');
+            pwInput.classList.add('has-error');
+            valid = false;
+        }
+
+        if (!valid) {
+            e.preventDefault();
+            // SweetAlert for empty fields (in addition to inline hints)
+            Swal.fire({
+                ...swalDefaults,
+                icon: 'warning',
+                title: 'Missing fields',
+                text: 'Please enter both your identifier and password.',
+            });
+            return;
+        }
+
+        // Valid — show loading state to prevent double-submit
+        signinBtn.disabled    = true;
+        signinBtn.textContent = 'Signing in…';
+        signinBtn.classList.add('loading');
+    });
+
+})();
+</script>
+
+</body>
+</html>
