@@ -84,3 +84,35 @@ class Follow(models.Model):
 
     def __str__(self):
         return f"{self.follower.username} → {self.following.username}"
+    
+class FollowRequest(models.Model):
+    sender = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="sent_follow_requests"
+    )
+
+    receiver = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="received_follow_requests"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sender", "receiver"],
+                name="unique_follow_request"
+            )
+        ]
+        
+    def clean(self):
+        if self.sender == self.receiver:
+            raise ValidationError("Users cannot send follow requests to themselves.")
+
+    def __str__(self):
+        return f"{self.sender.username} → {self.receiver.username} (request)"
+
+    
